@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Misbat.CodeAnalysisTest.Extensions;
+using Misbat.CodeAnalysisTest.Utility;
 using static Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree;
 
 namespace Misbat.CodeAnalysisTest;
@@ -89,6 +90,13 @@ public class CodeTest
         VerifyGeneratedTreesCount(generatorResult);
 
         ImmutableArray<Diagnostic> allDiagnostics = analyzerDiagnostics.AddRange(generatorDiagnostics);
+
+        if (!allDiagnostics.IsEmpty)
+        {
+            Console.Write("Reported Diagnostics: ");
+            Console.Write(StringUtility.Join(allDiagnostics, diagnostic => diagnostic.Id));
+            Console.WriteLine();
+        }
 
         Assert.That.DiagnosticsContain(allDiagnostics, ExpectedDiagnosticIds);
     }
