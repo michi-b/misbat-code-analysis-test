@@ -28,7 +28,7 @@ public static class AssertExtensions
             (
                 diagnostics.Any(diagnostic => diagnostic.Id == currentExpected),
                 "expected diagnostic id {0} is not among received diagnostics {1}",
-                expected,
+                currentExpected,
                 diagnostics.GetIdsString()
             );
         }
