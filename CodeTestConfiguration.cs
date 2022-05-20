@@ -3,9 +3,9 @@ using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Misbat.CodeAnalysisTest.Utility;
+using Misbat.CodeAnalysis.Test.Utility;
 
-namespace Misbat.CodeAnalysisTest;
+namespace Misbat.CodeAnalysis.Test;
 
 [PublicAPI]
 public class CodeTestConfiguration

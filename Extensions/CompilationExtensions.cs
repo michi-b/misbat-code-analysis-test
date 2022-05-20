@@ -2,7 +2,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Emit;
 
-namespace Misbat.CodeAnalysisTest.Extensions;
+namespace Misbat.CodeAnalysis.Test.Extensions;
 
 public static class CompilationExtensions
 {

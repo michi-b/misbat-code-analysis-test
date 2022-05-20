@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Misbat.CodeAnalysisTest.Extensions;
+namespace Misbat.CodeAnalysis.Test.Extensions;
 
 [SuppressMessage
 (

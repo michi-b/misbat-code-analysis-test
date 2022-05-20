@@ -5,11 +5,11 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Misbat.CodeAnalysisTest.Extensions;
-using Misbat.CodeAnalysisTest.Utility;
+using Misbat.CodeAnalysis.Test.Extensions;
+using Misbat.CodeAnalysis.Test.Utility;
 using static Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree;
 
-namespace Misbat.CodeAnalysisTest;
+namespace Misbat.CodeAnalysis.Test;
 
 [PublicAPI]
 public class CodeTest

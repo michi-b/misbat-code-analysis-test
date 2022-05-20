@@ -1,6 +1,6 @@
-﻿using Misbat.CodeAnalysisTest.Utility;
+﻿using Misbat.CodeAnalysis.Test.Utility;
 
-namespace Misbat.CodeAnalysisTest.Extensions
+namespace Misbat.CodeAnalysis.Test.Extensions
 {
     public static class StringExtensions
     {

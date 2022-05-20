@@ -1,4 +1,4 @@
-﻿namespace Misbat.CodeAnalysisTest.Utility
+﻿namespace Misbat.CodeAnalysis.Test.Utility
 {
     public static class StringUtility
     {

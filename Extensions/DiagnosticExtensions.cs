@@ -1,6 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 
-namespace Misbat.CodeAnalysisTest.Extensions;
+namespace Misbat.CodeAnalysis.Test.Extensions;
 
 public static class DiagnosticExtensions
 {
