@@ -6,10 +6,12 @@ namespace Misbat.CodeAnalysis.Test.Extensions;
 
 public static class DiagnosticsExtensions
 {
-    public static void Log(
+    public static void Log
+    (
         this ImmutableArray<Diagnostic> target,
         string? tag = null,
-        int indentLevel = 0)
+        int indentLevel = 0
+    )
     {
         string prefix = string.IsNullOrEmpty(tag)
             ? StringUtility.Indent(indentLevel)
@@ -28,9 +30,11 @@ public static class DiagnosticsExtensions
         }
     }
 
-    public static ImmutableArray<Diagnostic> WithMinimumSeverity(
+    public static ImmutableArray<Diagnostic> WithMinimumSeverity
+    (
         this ImmutableArray<Diagnostic> target,
-        DiagnosticSeverity minimumSeverity)
+        DiagnosticSeverity minimumSeverity
+    )
     {
         return target.Where(diagnostic => diagnostic.Severity >= minimumSeverity)
             .ToImmutableArray();

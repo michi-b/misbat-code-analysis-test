@@ -1,12 +1,8 @@
 ﻿using Misbat.CodeAnalysis.Test.Utility;
 
-namespace Misbat.CodeAnalysis.Test.Extensions
+namespace Misbat.CodeAnalysis.Test.Extensions;
+
+public static class StringExtensions
 {
-    public static class StringExtensions
-    {
-        public static string Indent(this string target, int indentLevel)
-        {
-            return StringUtility.Indent(indentLevel) + target;
-        }
-    }
+    public static string Indent(this string target, int indentLevel) => StringUtility.Indent(indentLevel) + target;
 }

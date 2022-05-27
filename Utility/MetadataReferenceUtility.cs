@@ -8,10 +8,7 @@ public static class MetadataReferenceUtility
 
     public static readonly MetadataReference SystemRuntime = GetAssemblyReference("System.Runtime");
 
-    public static MetadataReference GetAssemblyReference<T>()
-    {
-        return MetadataReference.CreateFromFile(typeof(T).Assembly.Location);
-    }
+    public static MetadataReference GetAssemblyReference<T>() => MetadataReference.CreateFromFile(typeof(T).Assembly.Location);
 
     public static MetadataReference GetAssemblyReference(string name)
     {

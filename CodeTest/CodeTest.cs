@@ -6,7 +6,6 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Misbat.CodeAnalysis.Test.Extensions;
-using static Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree;
 
 namespace Misbat.CodeAnalysis.Test.CodeTest;
 
@@ -15,14 +14,16 @@ public readonly struct CodeTest
 {
     public ImmutableArray<string> NameSpaceImports { get; init; }
 
-    public ImmutableArray<string> Code { get; init; } = ImmutableArray<string>.Empty;
+    public ImmutableList<CodeTestCode> Code { get; init; } = ImmutableList<CodeTestCode>.Empty;
 
     public ImmutableArray<CodeTestResult> Results { get; private init; } = ImmutableArray<CodeTestResult>.Empty;
 
     private CodeTestConfiguration Configuration { get; init; }
 
-    public CodeTest(CodeTestConfiguration configuration, ImmutableArray<string> nameSpaceImports = new())
+    public CodeTest(CodeTestConfiguration configuration, ImmutableArray<string> nameSpaceImports = default)
     {
+        nameSpaceImports = nameSpaceImports.IsDefault ? ImmutableArray<string>.Empty : nameSpaceImports;
+
         Configuration = configuration;
         NameSpaceImports = nameSpaceImports;
     }
@@ -36,36 +37,50 @@ public readonly struct CodeTest
 
     public async Task<CodeTest> Run(CancellationToken cancellationToken)
     {
-        //build code
-        var codeBuilder = new StringBuilder();
-        foreach (string nameSpaceImport in NameSpaceImports)
+        var syntaxTrees = new SyntaxTree[Code.Count];
+
+        Console.WriteLine("test code:");
+        for (int i = 0; i < Code.Count; i++)
         {
-            codeBuilder.AppendLine($"using {nameSpaceImport};");
+            CodeTestCode testCode = Code[i];
+
+            var codeBuilder = new StringBuilder();
+            foreach (string nameSpaceImport in NameSpaceImports)
+            {
+                codeBuilder.AppendLine($"using {nameSpaceImport};");
+            }
+
+            codeBuilder.Append('\n');
+            codeBuilder.Append(testCode.Code);
+
+            string extendedCode = codeBuilder.ToString();
+
+            Console.WriteLine
+            (
+                testCode.Path != null
+                    ? $"--- {testCode.Path}"
+                    : "---"
+            );
+            Console.Write(extendedCode);
+            Console.Write('\n');
+            Console.WriteLine("---");
+
+            syntaxTrees[i] = CSharpSyntaxTree.ParseText(extendedCode, cancellationToken: cancellationToken, path: testCode.Path ?? "");
         }
-
-        codeBuilder.Append('\n');
-        codeBuilder.Append(Code);
-
-        string code = codeBuilder.ToString();
-
-        Console.WriteLine("testing code:");
-        Console.WriteLine("---");
-        Console.Write(code);
-        Console.Write('\n');
-        Console.WriteLine("---");
 
         Compilation compilation = CSharpCompilation.Create
         (
             Configuration.AssemblyName,
-            new[] { ParseText(code, cancellationToken: cancellationToken) },
+            syntaxTrees,
             Configuration.MetaDataReferences,
             Configuration.CompilationOptions
         );
         Assert.That.Compiles(compilation);
 
-        ImmutableArray<Diagnostic> analyzerDiagnostics = await compilation.WithAnalyzers
-                (Configuration.Analyzers, cancellationToken: cancellationToken)
-            .GetAnalyzerDiagnosticsAsync(cancellationToken);
+        ImmutableArray<Diagnostic> analyzerDiagnostics = Configuration.Analyzers.Any()
+            ? await compilation.WithAnalyzers(Configuration.Analyzers, cancellationToken: cancellationToken)
+                .GetAnalyzerDiagnosticsAsync(cancellationToken)
+            : ImmutableArray<Diagnostic>.Empty;
 
         ImmutableDictionary<Type, GeneratorDriver> generatorResults = RunGenerators
             (compilation, out _, out ImmutableArray<Diagnostic> generatorDiagnostics, cancellationToken);
@@ -84,7 +99,9 @@ public readonly struct CodeTest
         );
     }
 
-    public CodeTest WithCode(string code) => new(this) { Code = Code.Add(code) };
+    public CodeTest WithCode(string code) => WithCode(new CodeTestCode(code));
+
+    public CodeTest WithCode(CodeTestCode code) => new(this) { Code = Code.Add(code) };
 
     public CodeTest WithGenerator(ISourceGenerator generator) =>
         new(this) { Configuration = Configuration.WithAdditionalGenerators(ImmutableArray.Create(generator)) };
@@ -132,7 +149,6 @@ public readonly struct CodeTest
                 (updatedCompilation, out updatedCompilation, out ImmutableArray<Diagnostic> diagnostics, cancellationToken);
             results = results.Add(generator.GetType(), generatorDriver);
             reportedDiagnostics = reportedDiagnostics.AddRange(diagnostics);
-
         }
 
         foreach (IIncrementalGenerator generator in Configuration.IncrementalGenerators)
