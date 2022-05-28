@@ -75,7 +75,6 @@ public readonly struct CodeTest
             Configuration.MetaDataReferences,
             Configuration.CompilationOptions
         );
-        Assert.That.Compiles(compilation);
 
         ImmutableArray<Diagnostic> analyzerDiagnostics = Configuration.Analyzers.Any()
             ? await compilation.WithAnalyzers(Configuration.Analyzers, cancellationToken: cancellationToken)
@@ -83,7 +82,9 @@ public readonly struct CodeTest
             : ImmutableArray<Diagnostic>.Empty;
 
         ImmutableDictionary<Type, GeneratorDriver> generatorResults = RunGenerators
-            (compilation, out _, out ImmutableArray<Diagnostic> generatorDiagnostics, cancellationToken);
+            (compilation, out compilation, out ImmutableArray<Diagnostic> generatorDiagnostics, cancellationToken);
+
+        Assert.That.Compiles(compilation);
 
         ImmutableArray<Diagnostic> allDiagnostics = analyzerDiagnostics.AddRange(generatorDiagnostics);
 
