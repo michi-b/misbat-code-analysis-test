@@ -1,7 +1,9 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using JetBrains.Annotations;
+using Microsoft.CodeAnalysis;
 
 namespace Misbat.CodeAnalysis.Test.Utility;
 
+[PublicAPI]
 public static class MetadataReferenceUtility
 {
     public static readonly MetadataReference MsCoreLib = GetAssemblyReference<object>();

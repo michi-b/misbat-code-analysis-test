@@ -50,7 +50,6 @@ public readonly struct CodeTest
                 codeBuilder.AppendLine($"using {nameSpaceImport};");
             }
 
-            codeBuilder.Append('\n');
             codeBuilder.Append(testCode.Code);
 
             string extendedCode = codeBuilder.ToString();
@@ -84,8 +83,6 @@ public readonly struct CodeTest
         ImmutableDictionary<Type, GeneratorDriver> generatorResults = RunGenerators
             (compilation, out compilation, out ImmutableArray<Diagnostic> generatorDiagnostics, cancellationToken);
 
-        Assert.That.Compiles(compilation);
-
         ImmutableArray<Diagnostic> allDiagnostics = analyzerDiagnostics.AddRange(generatorDiagnostics);
 
         return WithResult
@@ -95,7 +92,8 @@ public readonly struct CodeTest
                 AnalyzerDiagnostics = analyzerDiagnostics,
                 GeneratorDiagnostics = generatorDiagnostics,
                 AllDiagnostics = allDiagnostics,
-                GeneratorResults = generatorResults
+                GeneratorResults = generatorResults,
+                Compilation = compilation
             }
         );
     }
@@ -104,13 +102,9 @@ public readonly struct CodeTest
 
     public CodeTest WithCode(CodeTestCode code) => new(this) { Code = Code.Add(code) };
 
-    public CodeTest WithGenerator(ISourceGenerator generator) =>
-        new(this) { Configuration = Configuration.WithAdditionalGenerators(ImmutableArray.Create(generator)) };
-
-    public CodeTest WithGenerator(IIncrementalGenerator generator) =>
-        new(this) { Configuration = Configuration.WithAdditionalIncrementalGenerators(ImmutableArray.Create(generator)) };
-
     public CodeTest WithConfiguration(CodeTestConfiguration configuration) => new(this) { Configuration = configuration };
+
+    public CodeTest Configure(Func<CodeTestConfiguration, CodeTestConfiguration> configure) => WithConfiguration(configure(Configuration));
 
     public CodeTest WithAddedNamespaceImports
         (params string[] namespaceImports) =>
@@ -120,12 +114,8 @@ public readonly struct CodeTest
     {
         get
         {
-            if (Results.Any())
-            {
-                return Results.Last();
-            }
-
-            throw new InvalidOperationException("latest code test result was requested but no results are available");
+            Assert.AreEqual(Results.Length, 1, $"single code test result was requested, but it has {Results.Length} results");
+            return Results[0];
         }
     }
 
