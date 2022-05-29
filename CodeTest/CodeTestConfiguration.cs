@@ -14,19 +14,15 @@ public readonly struct CodeTestConfiguration
 
     public readonly string AssemblyName;
 
-    public ImmutableArray<DiagnosticAnalyzer> Analyzers { get; init; }
+    public ImmutableArray<DiagnosticAnalyzer> Analyzers { get; init; } = ImmutableArray<DiagnosticAnalyzer>.Empty;
 
-    public ImmutableArray<ISourceGenerator> Generators { get; init; }
+    public ImmutableArray<ISourceGenerator> Generators { get; init; } = ImmutableArray<ISourceGenerator>.Empty;
 
-    public ImmutableArray<IIncrementalGenerator> IncrementalGenerators { get; init; }
+    public ImmutableArray<IIncrementalGenerator> IncrementalGenerators { get; init; }= ImmutableArray<IIncrementalGenerator>.Empty;
 
     private ImmutableHashSet<Type> GeneratorTypes { get; init; } = ImmutableHashSet<Type>.Empty;
 
-    public ImmutableArray<MetadataReference> MetaDataReferences { get; init; } = ImmutableArray.Create
-    (
-        MetadataReferenceUtility.MsCoreLib,
-        MetadataReferenceUtility.SystemRuntime
-    );
+    public ImmutableArray<MetadataReference> MetaDataReferences { get; init; } = ImmutableArray<MetadataReference>.Empty;
 
     private CodeTestConfiguration(CodeTestConfiguration other)
     {
@@ -60,7 +56,7 @@ public readonly struct CodeTestConfiguration
 
     public CodeTestConfiguration
     (
-        ImmutableArray<MetadataReference> additionalMetadataReferences = new(),
+        ImmutableArray<MetadataReference> metaDataReferences,
         ImmutableArray<DiagnosticAnalyzer> analyzers = default,
         ImmutableArray<ISourceGenerator> generators = default,
         ImmutableArray<IIncrementalGenerator> incrementalGenerators = default,
@@ -71,7 +67,7 @@ public readonly struct CodeTestConfiguration
         generators = generators.IsDefault ? ImmutableArray<ISourceGenerator>.Empty : generators;
         incrementalGenerators = incrementalGenerators.IsDefault ? ImmutableArray<IIncrementalGenerator>.Empty : incrementalGenerators;
 
-        MetaDataReferences = MetaDataReferences.AddRange(additionalMetadataReferences);
+        MetaDataReferences = MetaDataReferences.AddRange(metaDataReferences);
         Analyzers = analyzers;
         Generators = generators;
         IncrementalGenerators = incrementalGenerators;
