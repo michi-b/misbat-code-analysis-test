@@ -3,7 +3,6 @@ using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Misbat.CodeAnalysis.Test.Utility;
 
 namespace Misbat.CodeAnalysis.Test.CodeTest;
 
@@ -18,7 +17,7 @@ public readonly struct CodeTestConfiguration
 
     public ImmutableArray<ISourceGenerator> Generators { get; init; } = ImmutableArray<ISourceGenerator>.Empty;
 
-    public ImmutableArray<IIncrementalGenerator> IncrementalGenerators { get; init; }= ImmutableArray<IIncrementalGenerator>.Empty;
+    public ImmutableArray<IIncrementalGenerator> IncrementalGenerators { get; init; } = ImmutableArray<IIncrementalGenerator>.Empty;
 
     private ImmutableHashSet<Type> GeneratorTypes { get; init; } = ImmutableHashSet<Type>.Empty;
 

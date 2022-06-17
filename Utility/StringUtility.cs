@@ -2,7 +2,7 @@
 
 public static class StringUtility
 {
-    public static string Indent(int indentLevel) => new string('\t', indentLevel);
+    public static string Indent(int indentLevel) => new('\t', indentLevel);
 
     public static string Join<TItem>(IEnumerable<TItem> items, Func<TItem, string> convert) => Join(items.Select(convert));
 
