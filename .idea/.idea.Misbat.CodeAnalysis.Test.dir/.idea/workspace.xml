@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="36602fca-c177-42e0-9dde-545dd5431b68" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/../.idea/.idea.MsbRpc/.idea/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../.idea/.idea.MsbRpc/.idea/encodings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../.idea/.idea.MsbRpc/.idea/indexLayout.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../.idea/.idea.MsbRpc/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$" beforeDir="false" afterPath="$PROJECT_DIR$" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Misbat.CodeAnalysis.Test.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/Misbat.CodeAnalysis.Test.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MsbRpc.Generator/MsbRpc.Generator.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../MsbRpc.Generator/MsbRpc.Generator.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MsbRpc.GeneratorAttributes/MsbRpc.GeneratorAttributes.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../MsbRpc.GeneratorAttributes/MsbRpc.GeneratorAttributes.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MsbRpc/Messaging/AlreadyListeningException.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../MsbRpc/Messaging/AlreadyListeningException.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MsbRpc/Messaging/NoMessageAvailableException.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../MsbRpc/Messaging/NoMessageAvailableException.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MsbRpc/Messaging/SocketWrapper.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../MsbRpc/Messaging/SocketWrapper.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MsbRpc/MsbRpc.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../MsbRpc/MsbRpc.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MsbRpc/NetworkUtility.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../MsbRpc/NetworkUtility.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MsbRpcConsoleTest/MsbRpcConsoleTest.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../MsbRpcConsoleTest/MsbRpcConsoleTest.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MsbRpcTest/MsbRpcTest.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../MsbRpcTest/MsbRpcTest.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MsbRpcTest/Serialization/Network/NetworkUtility.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../MsbRpcTest/Serialization/Network/NetworkUtility.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MsbRpcTest/Serialization/Network/PrimitiveSerializationTest.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../MsbRpcTest/Serialization/Network/PrimitiveSerializationTest.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MsbRpcTest/Serialization/Network/SocketWrapperTest.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../MsbRpcTest/Serialization/Network/SocketWrapperTest.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MsbRpcTest/Serialization/Network/TestSocketWrapper.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../MsbRpcTest/Serialization/Network/TestSocketWrapper.cs" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ProjectId" id="2DS3yrH6Z8cn79lLSTcyQfvqQBX" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="36602fca-c177-42e0-9dde-545dd5431b68" name="Changes" comment="" />
+      <created>1660678915213</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1660678915213</updated>
+      <workItem from="1660678924505" duration="9000" />
+      <workItem from="1660678941544" duration="15000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="UnityCheckinConfiguration" checkUnsavedScenes="true" />
+  <component name="UnityUnitTestConfiguration" currentTestLauncher="NUnit" />
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+  </component>
+</project>
