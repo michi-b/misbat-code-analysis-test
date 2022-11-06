@@ -75,24 +75,24 @@ public readonly struct CodeTestConfiguration
     }
 
     public CodeTestConfiguration WithAdditionalMetadataReferences
-        (params MetadataReference[] additionalMetadataReferences) =>
-        new(this) { MetaDataReferences = MetaDataReferences.AddRange(additionalMetadataReferences) };
+        (params MetadataReference[] additionalMetadataReferences)
+        => new(this) { MetaDataReferences = MetaDataReferences.AddRange(additionalMetadataReferences) };
 
     public CodeTestConfiguration WithAdditionalAnalyzers
-        (params DiagnosticAnalyzer[] additionalAnalyzers) =>
-        new(this) { Analyzers = Analyzers.AddRange(additionalAnalyzers) };
+        (params DiagnosticAnalyzer[] additionalAnalyzers)
+        => new(this) { Analyzers = Analyzers.AddRange(additionalAnalyzers) };
 
     public CodeTestConfiguration WithAdditionalGenerators
-        (params ISourceGenerator[] additionGenerators) =>
-        new(this)
+        (params ISourceGenerator[] additionGenerators)
+        => new(this)
         {
             GeneratorTypes = TestAndTrackDistinctGeneratorTypes(additionGenerators),
             Generators = Generators.AddRange(additionGenerators)
         };
 
     public CodeTestConfiguration WithAdditionalGenerators
-        (params IIncrementalGenerator[] additionalIncrementalGenerators) =>
-        new(this)
+        (params IIncrementalGenerator[] additionalIncrementalGenerators)
+        => new(this)
         {
             GeneratorTypes = TestAndTrackDistinctGeneratorTypes(additionalIncrementalGenerators),
             IncrementalGenerators = IncrementalGenerators.AddRange(additionalIncrementalGenerators)

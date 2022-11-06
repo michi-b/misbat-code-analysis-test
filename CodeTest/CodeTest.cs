@@ -106,8 +106,8 @@ public readonly struct CodeTest
     public CodeTest Configure(Func<CodeTestConfiguration, CodeTestConfiguration> configure) => WithConfiguration(configure(Configuration));
 
     public CodeTest WithAddedNamespaceImports
-        (params string[] namespaceImports) =>
-        new(this) { NameSpaceImports = NameSpaceImports.AddRange(namespaceImports) };
+        (params string[] namespaceImports)
+        => new(this) { NameSpaceImports = NameSpaceImports.AddRange(namespaceImports) };
 
     public CodeTestResult Result
     {
