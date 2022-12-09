@@ -4,7 +4,9 @@ using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Misbat.CodeAnalysis.Test.CodeTest;
@@ -35,9 +37,20 @@ public readonly struct CodeTest
         Code = other.Code;
     }
 
-    public async Task<CodeTest> Run(ILoggerFactory loggerFactory, CancellationToken cancellationToken)
+    public enum LoggingOptions
     {
-        ILogger<CodeTest> logger = loggerFactory.CreateLogger<CodeTest>();
+        None = 0,
+        TestedCode = 1 << 0,
+        GeneratedCode = 1 << 1,
+        AnalyzerDiagnostics = 1 << 2,
+        GeneratorDiagnostics = 1 << 3,
+        All = TestedCode | GeneratedCode | AnalyzerDiagnostics | GeneratorDiagnostics
+    }
+
+    public async Task<CodeTest> Run
+        (CancellationToken cancellationToken, ILoggerFactory? loggerFactory = null, LoggingOptions loggingOptions = LoggingOptions.All)
+    {
+        ILogger<CodeTest> logger = loggerFactory != null ? loggerFactory.CreateLogger<CodeTest>() : NullLogger<CodeTest>.Instance;
 
         var syntaxTrees = new SyntaxTree[Code.Count];
 
@@ -51,13 +64,16 @@ public readonly struct CodeTest
                 codeBuilder.AppendLine($"using {nameSpaceImport};");
             }
 
+            //add a newline after namespace imports
+            codeBuilder.AppendLine();
+
             codeBuilder.Append(testCode.Code);
 
             string extendedCode = codeBuilder.ToString();
 
-            if (logger.IsEnabled(LogLevel.Information))
+            if (loggingOptions.HasFlag(LoggingOptions.TestedCode) && logger.IsEnabled(LogLevel.Information))
             {
-                await LogTestCode(logger, i, extendedCode, testCode.Path);
+                await LogCode(logger, "Tested", i, extendedCode, testCode.Path);
             }
 
             syntaxTrees[i] = CSharpSyntaxTree.ParseText(extendedCode, cancellationToken: cancellationToken, path: testCode.Path ?? "");
@@ -76,8 +92,42 @@ public readonly struct CodeTest
                 .GetAnalyzerDiagnosticsAsync(cancellationToken)
             : ImmutableArray<Diagnostic>.Empty;
 
+        if (loggingOptions.HasFlag(LoggingOptions.AnalyzerDiagnostics))
+        {
+            LogDiagnostics(logger, analyzerDiagnostics, "Analyzer");
+        }
+
         ImmutableDictionary<Type, GeneratorDriver> generatorResults = RunGenerators
             (compilation, out compilation, out ImmutableArray<Diagnostic> generatorDiagnostics, cancellationToken);
+
+        if (loggingOptions.HasFlag(LoggingOptions.GeneratorDiagnostics))
+        {
+            LogDiagnostics(logger, analyzerDiagnostics, "Generator");
+        }
+
+        if (loggingOptions.HasFlag(LoggingOptions.GeneratedCode))
+        {
+            foreach (KeyValuePair<Type, GeneratorDriver> generatorResult in generatorResults)
+            {
+                ImmutableArray<SyntaxTree> generatedTrees = generatorResult.Value.GetRunResult().GeneratedTrees;
+                if (generatedTrees.Any())
+                {
+                    for (int i = 0; i < generatedTrees.Length; i++)
+                    {
+                        SyntaxTree generatedTree = generatedTrees[i];
+                        SourceText sourceText = await generatedTree.GetTextAsync(cancellationToken);
+                        await LogCode
+                        (
+                            logger,
+                            $"Generated (by {generatorResult.Key.FullName})",
+                            i,
+                            sourceText.ToString(),
+                            generatedTree.FilePath
+                        );
+                    }
+                }
+            }
+        }
 
         ImmutableArray<Diagnostic> allDiagnostics = analyzerDiagnostics.AddRange(generatorDiagnostics);
 
@@ -94,7 +144,7 @@ public readonly struct CodeTest
         );
     }
 
-    private static async Task LogTestCode(ILogger<CodeTest> logger, int treeIndex, string extendedCode, string? path)
+    private static async Task LogCode(ILogger<CodeTest> logger, object? category, int index, string code, string? path)
     {
         const string codeBeginMarker = "---CODE-BEGIN---";
         const string codeEndMarker = "---CODE-END---";
@@ -108,11 +158,52 @@ public readonly struct CodeTest
                 : $"{codeBeginMarker}"
         );
 
-        await testCodeWriter.WriteAsync(extendedCode);
+        await testCodeWriter.WriteAsync(code);
         await testCodeWriter.WriteAsync('\n');
         await testCodeWriter.WriteLineAsync(codeEndMarker);
 
-        logger.LogInformation("Syntax Tree {SyntaxTreeIndex} has code:\n{Code}", treeIndex, testCodeWriter);
+        logger.LogInformation("{Category} syntax tree {SyntaxTreeIndex} code:\n{Code}", category, index, testCodeWriter);
+    }
+
+    private static void LogDiagnostics(ILogger<CodeTest> logger, ImmutableArray<Diagnostic> diagnostics, string sourceName)
+    {
+        foreach (DiagnosticSeverity severity in new[]
+                 {
+                     DiagnosticSeverity.Error, DiagnosticSeverity.Warning, DiagnosticSeverity.Info, DiagnosticSeverity.Hidden
+                 })
+        {
+            LogLevel logLevel = severity switch
+            {
+                DiagnosticSeverity.Hidden => LogLevel.Trace,
+                DiagnosticSeverity.Info => LogLevel.Information,
+                DiagnosticSeverity.Warning => LogLevel.Warning,
+                DiagnosticSeverity.Error => LogLevel.Error,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            if (logger.IsEnabled(logLevel)) { }
+
+            ImmutableArray<Diagnostic> currentDiagnostics = diagnostics.Where(d => d.Severity == severity).ToImmutableArray();
+
+            if (currentDiagnostics.Any())
+            {
+                var diagnosticsStringBuilder = new StringBuilder(diagnostics.Length * 100);
+                foreach (Diagnostic diagnostic in currentDiagnostics)
+                {
+                    diagnosticsStringBuilder.AppendLine($"\t{diagnostic}");
+                }
+
+                diagnosticsStringBuilder.Length--;
+
+                logger.Log
+                (
+                    logLevel,
+                    "{DiagnosticsSourceName} {DiagnosticSeverity} diagnostics:\n{Diagnostics}",
+                    sourceName,
+                    severity.ToString(),
+                    diagnosticsStringBuilder.ToString()
+                );
+            }
+        }
     }
 
     public CodeTest WithCode(string code) => WithCode(new CodeTestCode(code));
