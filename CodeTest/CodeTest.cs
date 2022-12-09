@@ -4,6 +4,7 @@ using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Misbat.CodeAnalysis.Test.CodeTest;
@@ -34,11 +35,12 @@ public readonly struct CodeTest
         Code = other.Code;
     }
 
-    public async Task<CodeTest> Run(CancellationToken cancellationToken)
+    public async Task<CodeTest> Run(ILoggerFactory loggerFactory, CancellationToken cancellationToken)
     {
+        ILogger<CodeTest> logger = loggerFactory.CreateLogger<CodeTest>();
+
         var syntaxTrees = new SyntaxTree[Code.Count];
 
-        Console.WriteLine("test code:");
         for (int i = 0; i < Code.Count; i++)
         {
             CodeTestCode testCode = Code[i];
@@ -53,15 +55,10 @@ public readonly struct CodeTest
 
             string extendedCode = codeBuilder.ToString();
 
-            Console.WriteLine
-            (
-                testCode.Path != null
-                    ? $"--- {testCode.Path}"
-                    : "---"
-            );
-            Console.Write(extendedCode);
-            Console.Write('\n');
-            Console.WriteLine("---");
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                await LogTestCode(logger, i, extendedCode, testCode.Path);
+            }
 
             syntaxTrees[i] = CSharpSyntaxTree.ParseText(extendedCode, cancellationToken: cancellationToken, path: testCode.Path ?? "");
         }
@@ -95,6 +92,27 @@ public readonly struct CodeTest
                 Compilation = compilation
             }
         );
+    }
+
+    private static async Task LogTestCode(ILogger<CodeTest> logger, int treeIndex, string extendedCode, string? path)
+    {
+        const string codeBeginMarker = "---CODE-BEGIN---";
+        const string codeEndMarker = "---CODE-END---";
+
+        var testCodeWriter = new StringWriter();
+
+        await testCodeWriter.WriteLineAsync
+        (
+            path != null
+                ? $"{codeBeginMarker} {path}"
+                : $"{codeBeginMarker}"
+        );
+
+        await testCodeWriter.WriteAsync(extendedCode);
+        await testCodeWriter.WriteAsync('\n');
+        await testCodeWriter.WriteLineAsync(codeEndMarker);
+
+        logger.LogInformation("Syntax Tree {SyntaxTreeIndex} has code:\n{Code}", treeIndex, testCodeWriter);
     }
 
     public CodeTest WithCode(string code) => WithCode(new CodeTestCode(code));
