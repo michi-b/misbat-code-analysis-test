@@ -14,7 +14,9 @@ namespace Misbat.CodeAnalysis.Test.CodeTest;
 [PublicAPI]
 public readonly struct CodeTest
 {
-    public ImmutableArray<string> NameSpaceImports { get; init; }
+    public ImmutableArray<string> NamespaceImports { get; init; }
+
+    public string? Namespace { get; init; }
 
     public ImmutableList<CodeTestCode> Code { get; init; } = ImmutableList<CodeTestCode>.Empty;
 
@@ -22,21 +24,7 @@ public readonly struct CodeTest
 
     private CodeTestConfiguration Configuration { get; init; }
 
-    public CodeTest(CodeTestConfiguration configuration, ImmutableArray<string> nameSpaceImports = default)
-    {
-        nameSpaceImports = nameSpaceImports.IsDefault ? ImmutableArray<string>.Empty : nameSpaceImports;
-
-        Configuration = configuration;
-        NameSpaceImports = nameSpaceImports;
-    }
-
-    private CodeTest(CodeTest other)
-    {
-        Configuration = other.Configuration;
-        NameSpaceImports = other.NameSpaceImports;
-        Code = other.Code;
-    }
-
+    [PublicAPI]
     public enum LoggingOptions
     {
         None = 0,
@@ -45,6 +33,22 @@ public readonly struct CodeTest
         AnalyzerDiagnostics = 1 << 2,
         GeneratorDiagnostics = 1 << 3,
         All = TestedCode | GeneratedCode | AnalyzerDiagnostics | GeneratorDiagnostics
+    }
+
+    public CodeTest(CodeTestConfiguration configuration, ImmutableArray<string> namespaceImports = default, string? inNamespace = null)
+    {
+        namespaceImports = namespaceImports.IsDefault ? ImmutableArray<string>.Empty : namespaceImports;
+        Configuration = configuration;
+        NamespaceImports = namespaceImports;
+        Namespace = inNamespace;
+    }
+
+    private CodeTest(CodeTest other)
+    {
+        Configuration = other.Configuration;
+        NamespaceImports = other.NamespaceImports;
+        Namespace = other.Namespace;
+        Code = other.Code;
     }
 
     public async Task<CodeTest> Run
@@ -56,27 +60,15 @@ public readonly struct CodeTest
 
         for (int i = 0; i < Code.Count; i++)
         {
-            CodeTestCode testCode = Code[i];
-
-            var codeBuilder = new StringBuilder();
-            foreach (string nameSpaceImport in NameSpaceImports)
-            {
-                codeBuilder.AppendLine($"using {nameSpaceImport};");
-            }
-
-            //add a newline after namespace imports
-            codeBuilder.AppendLine();
-
-            codeBuilder.Append(testCode.Code);
-
-            string extendedCode = codeBuilder.ToString();
+            string? path = Code[i].Path;
+            string code = DecorateTestCode(Code[i]);
 
             if (loggingOptions.HasFlag(LoggingOptions.TestedCode) && logger.IsEnabled(LogLevel.Information))
             {
-                await LogCode(logger, "Tested", i, extendedCode, testCode.Path);
+                await LogCode(logger, "Tested", i, code, path);
             }
 
-            syntaxTrees[i] = CSharpSyntaxTree.ParseText(extendedCode, cancellationToken: cancellationToken, path: testCode.Path ?? "");
+            syntaxTrees[i] = CSharpSyntaxTree.ParseText(code, cancellationToken: cancellationToken, path: path ?? "");
         }
 
         Compilation compilation = CSharpCompilation.Create
@@ -87,9 +79,9 @@ public readonly struct CodeTest
             Configuration.CompilationOptions
         );
 
-        ImmutableArray<Diagnostic> analyzerDiagnostics = Configuration.Analyzers.Any()
+        ImmutableArray<Diagnostic> analyzerDiagnostics = Configuration.Analyzers.Length > 0
             ? await compilation.WithAnalyzers(Configuration.Analyzers, cancellationToken: cancellationToken)
-                .GetAnalyzerDiagnosticsAsync(cancellationToken)
+                .GetAllDiagnosticsAsync(cancellationToken)
             : ImmutableArray<Diagnostic>.Empty;
 
         if (loggingOptions.HasFlag(LoggingOptions.AnalyzerDiagnostics))
@@ -107,26 +99,7 @@ public readonly struct CodeTest
 
         if (loggingOptions.HasFlag(LoggingOptions.GeneratedCode))
         {
-            foreach (KeyValuePair<Type, GeneratorDriver> generatorResult in generatorResults)
-            {
-                ImmutableArray<SyntaxTree> generatedTrees = generatorResult.Value.GetRunResult().GeneratedTrees;
-                if (generatedTrees.Any())
-                {
-                    for (int i = 0; i < generatedTrees.Length; i++)
-                    {
-                        SyntaxTree generatedTree = generatedTrees[i];
-                        SourceText sourceText = await generatedTree.GetTextAsync(cancellationToken);
-                        await LogCode
-                        (
-                            logger,
-                            $"Generated (by {generatorResult.Key.FullName})",
-                            i,
-                            sourceText.ToString(),
-                            generatedTree.FilePath
-                        );
-                    }
-                }
-            }
+            await LogGeneratedCode(logger, generatorResults, cancellationToken);
         }
 
         ImmutableArray<Diagnostic> allDiagnostics = analyzerDiagnostics.AddRange(generatorDiagnostics);
@@ -144,6 +117,57 @@ public readonly struct CodeTest
         );
     }
 
+    private string DecorateTestCode(CodeTestCode testCode)
+    {
+        var codeBuilder = new StringBuilder();
+
+        if (NamespaceImports.Length > 0)
+        {
+            foreach (string nameSpaceImport in NamespaceImports)
+            {
+                codeBuilder.AppendLine($"using {nameSpaceImport};");
+            }
+
+            codeBuilder.AppendLine();
+        }
+
+        if (Namespace != null)
+        {
+            codeBuilder.AppendLine($"namespace {Namespace};");
+            codeBuilder.AppendLine();
+        }
+
+        codeBuilder.Append(testCode.Code);
+
+        string code = codeBuilder.ToString();
+        return code;
+    }
+
+    private static async Task LogGeneratedCode
+        (ILogger<CodeTest> logger, ImmutableDictionary<Type, GeneratorDriver> generatorResults, CancellationToken cancellationToken)
+    {
+        foreach (KeyValuePair<Type, GeneratorDriver> generatorResult in generatorResults)
+        {
+            ImmutableArray<SyntaxTree> generatedTrees = generatorResult.Value.GetRunResult().GeneratedTrees;
+            if (generatedTrees.Any())
+            {
+                for (int i = 0; i < generatedTrees.Length; i++)
+                {
+                    SyntaxTree generatedTree = generatedTrees[i];
+                    SourceText sourceText = await generatedTree.GetTextAsync(cancellationToken);
+                    await LogCode
+                    (
+                        logger,
+                        $"Generated (by {generatorResult.Key.FullName})",
+                        i,
+                        sourceText.ToString(),
+                        generatedTree.FilePath
+                    );
+                }
+            }
+        }
+    }
+
     private static async Task LogCode(ILogger<CodeTest> logger, object? category, int index, string code, string? path)
     {
         const string codeBeginMarker = "---CODE-BEGIN---";
@@ -151,18 +175,19 @@ public readonly struct CodeTest
 
         var testCodeWriter = new StringWriter();
 
-        await testCodeWriter.WriteLineAsync
-        (
-            path != null
-                ? $"{codeBeginMarker} {path}"
-                : $"{codeBeginMarker}"
-        );
-
+        await testCodeWriter.WriteLineAsync(codeBeginMarker);
         await testCodeWriter.WriteAsync(code);
         await testCodeWriter.WriteAsync('\n');
-        await testCodeWriter.WriteLineAsync(codeEndMarker);
+        await testCodeWriter.WriteAsync(codeEndMarker);
 
-        logger.LogInformation("{Category} syntax tree {SyntaxTreeIndex} code:\n{Code}", category, index, testCodeWriter);
+        if (path != null)
+        {
+            logger.LogInformation("{Category} syntax tree {SyntaxTreeIndex} code:\n{Path}\n{Code}", category, index, path, testCodeWriter);
+        }
+        else
+        {
+            logger.LogInformation("{Category} syntax tree {SyntaxTreeIndex} code:\n{Code}", category, index, testCodeWriter);
+        }
     }
 
     private static void LogDiagnostics(ILogger<CodeTest> logger, ImmutableArray<Diagnostic> diagnostics, string sourceName)
@@ -216,7 +241,7 @@ public readonly struct CodeTest
 
     public CodeTest WithAddedNamespaceImports
         (params string[] namespaceImports)
-        => new(this) { NameSpaceImports = NameSpaceImports.AddRange(namespaceImports) };
+        => new(this) { NamespaceImports = NamespaceImports.AddRange(namespaceImports) };
 
     public CodeTestResult Result
     {
@@ -228,6 +253,8 @@ public readonly struct CodeTest
     }
 
     private CodeTest WithResult(CodeTestResult result) => new(this) { Results = Results.Add(result) };
+
+    public CodeTest InNamespace(string namespaceIn) => new(this) { Namespace = namespaceIn };
 
     private ImmutableDictionary<Type, GeneratorDriver> RunGenerators
     (
