@@ -14,6 +14,10 @@ namespace Misbat.CodeAnalysis.Test.CodeTest;
 [PublicAPI]
 public readonly struct CodeTest
 {
+    private const string AfterMarker = "-------------";
+    private const string BeforeMarker = AfterMarker + AfterMarker;
+    private const string CodeBeginMarker = "\n" + BeforeMarker + "CODE-BEGIN" + AfterMarker  + "\\";
+    private const string CodeEndMarker = BeforeMarker + "-CODE-END-" + AfterMarker + "/\n";
     public ImmutableArray<string> NamespaceImports { get; init; }
 
     public string? Namespace { get; init; }
@@ -170,15 +174,12 @@ public readonly struct CodeTest
 
     private static async Task LogCode(ILogger<CodeTest> logger, object? category, int index, string code, string? path)
     {
-        const string codeBeginMarker = "---CODE-BEGIN---";
-        const string codeEndMarker = "---CODE-END---";
-
         var testCodeWriter = new StringWriter();
 
-        await testCodeWriter.WriteLineAsync(codeBeginMarker);
+        await testCodeWriter.WriteLineAsync(CodeBeginMarker);
         await testCodeWriter.WriteAsync(code);
         await testCodeWriter.WriteAsync('\n');
-        await testCodeWriter.WriteAsync(codeEndMarker);
+        await testCodeWriter.WriteAsync(CodeEndMarker);
 
         if (path != null)
         {
