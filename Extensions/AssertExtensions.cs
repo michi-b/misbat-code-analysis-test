@@ -34,6 +34,16 @@ public static class AssertExtensions
         }
     }
 
+    public static void HasGeneratedAnyTree(this Assert assert, GeneratorDriverRunResult generatorResult)
+    {
+        Assert.IsTrue(generatorResult.GeneratedTrees.Length > 0);
+    }
+
+    public static void HasGeneratedAnyTree(this Assert assert, GeneratorDriverRunResult generatorResult, Predicate<SyntaxTree> predicate)
+    {
+        Assert.IsTrue(generatorResult.GeneratedTrees.Any(tree => predicate(tree)));
+    }
+
     public static void Compiles(this Assert assert, Compilation compilation)
     {
         bool compiles = compilation.Test(out ImmutableArray<Diagnostic> diagnostics);
