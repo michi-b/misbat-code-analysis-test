@@ -16,7 +16,7 @@ public readonly struct CodeTest
 {
     private const string AfterMarker = "-------------";
     private const string BeforeMarker = AfterMarker + AfterMarker;
-    private const string CodeBeginMarker = "\n" + BeforeMarker + "CODE-BEGIN" + AfterMarker  + "\\";
+    private const string CodeBeginMarker = BeforeMarker + "CODE-BEGIN" + AfterMarker + "\\";
     private const string CodeEndMarker = BeforeMarker + "-CODE-END-" + AfterMarker + "/\n";
     public ImmutableArray<string> NamespaceImports { get; init; }
 
@@ -150,23 +150,43 @@ public readonly struct CodeTest
     private static async Task LogGeneratedCode
         (ILogger<CodeTest> logger, ImmutableDictionary<Type, GeneratorDriver> generatorResults, CancellationToken cancellationToken)
     {
-        foreach (KeyValuePair<Type, GeneratorDriver> generatorResult in generatorResults)
+        ImmutableDictionary<Type, GeneratorDriver> results = generatorResults;
+        if (generatorResults.Count > 0)
         {
-            ImmutableArray<SyntaxTree> generatedTrees = generatorResult.Value.GetRunResult().GeneratedTrees;
-            if (generatedTrees.Any())
+            foreach (KeyValuePair<Type, GeneratorDriver> generatorResult in results)
             {
-                for (int i = 0; i < generatedTrees.Length; i++)
+                ImmutableArray<SyntaxTree> generatedTrees = generatorResult.Value.GetRunResult().GeneratedTrees;
+                if (generatedTrees.Any())
                 {
-                    SyntaxTree generatedTree = generatedTrees[i];
-                    SourceText sourceText = await generatedTree.GetTextAsync(cancellationToken);
-                    await LogCode
+                    string[] treePaths = (from tree in generatedTrees select Path.GetFileName(tree.FilePath)).ToArray();
+                    int treeCount = treePaths.Length;
+                    var treePathsBuilder = new StringBuilder(treePaths.Length * treePaths[0].Length * 2);
+                    for (int i = 0; i < treeCount; i++)
+                    {
+                        treePathsBuilder.Append($"\n[{i}] {treePaths[i]}");
+                    }
+
+                    logger.LogInformation
                     (
-                        logger,
-                        $"Generated (by {generatorResult.Key.FullName})",
-                        i,
-                        sourceText.ToString(),
-                        generatedTree.FilePath
+                        "Generator {GeneratorType} generated {GeneratedTreesCount} trees:{TreePaths}",
+                        generatorResult.Key.FullName,
+                        treeCount,
+                        treePathsBuilder.ToString()
                     );
+
+                    for (int i = 0; i < generatedTrees.Length; i++)
+                    {
+                        SyntaxTree generatedTree = generatedTrees[i];
+                        SourceText sourceText = await generatedTree.GetTextAsync(cancellationToken);
+                        await LogCode
+                        (
+                            logger,
+                            $"Generated (by {generatorResult.Key.FullName})",
+                            i,
+                            sourceText.ToString(),
+                            generatedTree.FilePath
+                        );
+                    }
                 }
             }
         }
