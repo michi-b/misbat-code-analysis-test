@@ -98,7 +98,7 @@ public readonly struct CodeTest
 
         if (loggingOptions.HasFlag(LoggingOptions.GeneratorDiagnostics))
         {
-            LogDiagnostics(logger, analyzerDiagnostics, "Generator");
+            LogDiagnostics(logger, generatorDiagnostics, "Generator");
         }
 
         if (loggingOptions.HasFlag(LoggingOptions.GeneratedCode))
@@ -107,6 +107,11 @@ public readonly struct CodeTest
         }
 
         ImmutableArray<Diagnostic> allDiagnostics = analyzerDiagnostics.AddRange(generatorDiagnostics);
+
+        ImmutableArray<Diagnostic> finalDiagnostics = compilation.GetDiagnostics();
+        LogDiagnostics(logger, finalDiagnostics, "Final compilation analysis");
+
+        allDiagnostics = allDiagnostics.AddRange(finalDiagnostics).Distinct().ToImmutableArray();
 
         return WithResult
         (
@@ -150,10 +155,9 @@ public readonly struct CodeTest
     private static async Task LogGeneratedCode
         (ILogger<CodeTest> logger, ImmutableDictionary<Type, GeneratorDriver> generatorResults, CancellationToken cancellationToken)
     {
-        ImmutableDictionary<Type, GeneratorDriver> results = generatorResults;
         if (generatorResults.Count > 0)
         {
-            foreach (KeyValuePair<Type, GeneratorDriver> generatorResult in results)
+            foreach (KeyValuePair<Type, GeneratorDriver> generatorResult in generatorResults)
             {
                 ImmutableArray<SyntaxTree> generatedTrees = generatorResult.Value.GetRunResult().GeneratedTrees;
                 if (generatedTrees.Any())
@@ -211,7 +215,7 @@ public readonly struct CodeTest
         }
     }
 
-    private static void LogDiagnostics(ILogger<CodeTest> logger, ImmutableArray<Diagnostic> diagnostics, string sourceName)
+    private static void LogDiagnostics(ILogger<CodeTest> logger, ImmutableArray<Diagnostic> diagnostics, string diagnosticsSource)
     {
         foreach (DiagnosticSeverity severity in new[]
                  {
@@ -226,28 +230,30 @@ public readonly struct CodeTest
                 DiagnosticSeverity.Error => LogLevel.Error,
                 _ => throw new ArgumentOutOfRangeException()
             };
-            if (logger.IsEnabled(logLevel)) { }
-
-            ImmutableArray<Diagnostic> currentDiagnostics = diagnostics.Where(d => d.Severity == severity).ToImmutableArray();
-
-            if (currentDiagnostics.Any())
+            if (logger.IsEnabled(logLevel))
             {
-                var diagnosticsStringBuilder = new StringBuilder(diagnostics.Length * 100);
-                foreach (Diagnostic diagnostic in currentDiagnostics)
+                ImmutableArray<Diagnostic> currentDiagnostics = diagnostics.Where(d => d.Severity == severity).ToImmutableArray();
+
+                if (currentDiagnostics.Any())
                 {
-                    diagnosticsStringBuilder.AppendLine($"\t{diagnostic}");
+                    var diagnosticsStringBuilder = new StringBuilder(diagnostics.Length * 100);
+                    foreach (Diagnostic diagnostic in currentDiagnostics)
+                    {
+                        diagnosticsStringBuilder.AppendLine($"\t{diagnostic}");
+                    }
+
+                    diagnosticsStringBuilder.Length--;
+
+                    logger.Log
+                    (
+                        logLevel,
+                        "{DiagnosticsSource} has {diagnosticsCount} '{DiagnosticSeverity}' diagnostics:\n{Diagnostics}",
+                        diagnosticsSource,
+                        currentDiagnostics.Length,
+                        severity.ToString(),
+                        diagnosticsStringBuilder.ToString()
+                    );
                 }
-
-                diagnosticsStringBuilder.Length--;
-
-                logger.Log
-                (
-                    logLevel,
-                    "{DiagnosticsSourceName} {DiagnosticSeverity} diagnostics:\n{Diagnostics}",
-                    sourceName,
-                    severity.ToString(),
-                    diagnosticsStringBuilder.ToString()
-                );
             }
         }
     }
