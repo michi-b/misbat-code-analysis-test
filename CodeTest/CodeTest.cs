@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Text;
+using System.Text.RegularExpressions;
 using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -14,18 +15,12 @@ namespace Misbat.CodeAnalysis.Test.CodeTest;
 [PublicAPI]
 public readonly struct CodeTest
 {
-    private const string AfterMarker = "-------------";
-    private const string BeforeMarker = AfterMarker + AfterMarker;
-    private const string CodeBeginMarker = BeforeMarker + "CODE-BEGIN" + AfterMarker + "\\";
-    private const string CodeEndMarker = BeforeMarker + "-CODE-END-" + AfterMarker + "/\n";
+    private static readonly Regex ShortGeneratedCodeFilePathRegex = new(".*([^\\.]+\\.g\\.cs)$", RegexOptions.RightToLeft);
+
     public ImmutableArray<string> NamespaceImports { get; init; }
-
     public string? Namespace { get; init; }
-
     public ImmutableList<CodeTestCode> Code { get; init; } = ImmutableList<CodeTestCode>.Empty;
-
     public ImmutableArray<CodeTestResult> Results { get; private init; } = ImmutableArray<CodeTestResult>.Empty;
-
     private CodeTestConfiguration Configuration { get; init; }
 
     [PublicAPI]
@@ -88,30 +83,17 @@ public readonly struct CodeTest
                 .GetAllDiagnosticsAsync(cancellationToken)
             : ImmutableArray<Diagnostic>.Empty;
 
-        if (loggingOptions.HasFlag(LoggingOptions.AnalyzerDiagnostics))
-        {
-            LogDiagnostics(logger, analyzerDiagnostics, "Analyzer");
-        }
-
         ImmutableDictionary<Type, GeneratorDriver> generatorResults = RunGenerators
             (compilation, out compilation, out ImmutableArray<Diagnostic> generatorDiagnostics, cancellationToken);
 
-        if (loggingOptions.HasFlag(LoggingOptions.GeneratorDiagnostics))
-        {
-            LogDiagnostics(logger, generatorDiagnostics, "Generator");
-        }
+        ImmutableArray<Diagnostic> finalDiagnostics = compilation.GetDiagnostics();
+
+        LogDiagnostics(logger, analyzerDiagnostics, generatorDiagnostics, finalDiagnostics, loggingOptions);
 
         if (loggingOptions.HasFlag(LoggingOptions.GeneratedCode))
         {
             await LogGeneratedCode(logger, generatorResults, cancellationToken);
         }
-
-        ImmutableArray<Diagnostic> allDiagnostics = analyzerDiagnostics.AddRange(generatorDiagnostics);
-
-        ImmutableArray<Diagnostic> finalDiagnostics = compilation.GetDiagnostics();
-        LogDiagnostics(logger, finalDiagnostics, "Final compilation analysis");
-
-        allDiagnostics = allDiagnostics.AddRange(finalDiagnostics).Distinct().ToImmutableArray();
 
         return WithResult
         (
@@ -119,7 +101,7 @@ public readonly struct CodeTest
             {
                 AnalyzerDiagnostics = analyzerDiagnostics,
                 GeneratorDiagnostics = generatorDiagnostics,
-                AllDiagnostics = allDiagnostics,
+                FinalDiagnostics = finalDiagnostics,
                 GeneratorResults = generatorResults,
                 Compilation = compilation
             }
@@ -198,21 +180,77 @@ public readonly struct CodeTest
 
     private static async Task LogCode(ILogger<CodeTest> logger, object? category, int index, string code, string? path)
     {
+        var textCodeReader = new StringReader(code);
         var testCodeWriter = new StringWriter();
 
-        await testCodeWriter.WriteLineAsync(CodeBeginMarker);
-        await testCodeWriter.WriteAsync(code);
-        await testCodeWriter.WriteAsync('\n');
-        await testCodeWriter.WriteAsync(CodeEndMarker);
+        var lines = new List<string>(100);
+        while (await textCodeReader.ReadLineAsync() is { } line)
+        {
+            lines.Add(line);
+        }
+
+        string format = GetContainingDigitsFormat(lines.Count);
+
+        for (int i = 0; i < lines.Count; i++)
+        {
+            string lineNumber = string.Format(format, i);
+            string formattedLine = $"{lineNumber} | {lines[i]}";
+
+            if (i < lines.Count - 1)
+            {
+                await testCodeWriter.WriteLineAsync(formattedLine);
+            }
+            else
+            {
+                await testCodeWriter.WriteAsync(formattedLine);
+            }
+        }
 
         if (path != null)
         {
-            logger.LogInformation("{Category} syntax tree {SyntaxTreeIndex} code:\n{Path}\n{Code}", category, index, path, testCodeWriter);
+            logger.LogInformation
+            (
+                "{Category} syntax tree {SyntaxTreeIndex} code:\n{ShortPath}:\n{Code}",
+                category,
+                index,
+                GetShortPath(path),
+                testCodeWriter
+            );
         }
         else
         {
             logger.LogInformation("{Category} syntax tree {SyntaxTreeIndex} code:\n{Code}", category, index, testCodeWriter);
         }
+    }
+
+    private static string GetContainingDigitsFormat(int count)
+    {
+        int lastIndex = count - 1;
+        int decimalPlaces = (int)Math.Floor(Math.Log10(lastIndex) + 1);
+        char[] zeros = Enumerable.Repeat('0', decimalPlaces).ToArray();
+        return $"{{0:{new string(zeros)}}}";
+    }
+
+    private static void LogDiagnostics
+    (
+        ILogger<CodeTest> logger,
+        ImmutableArray<Diagnostic> analyzerDiagnostics,
+        ImmutableArray<Diagnostic> generatorDiagnostics,
+        ImmutableArray<Diagnostic> finalDiagnostics,
+        LoggingOptions loggingOptions
+    )
+    {
+        if (loggingOptions.HasFlag(LoggingOptions.AnalyzerDiagnostics))
+        {
+            LogDiagnostics(logger, analyzerDiagnostics, "Analyzer");
+        }
+
+        if (loggingOptions.HasFlag(LoggingOptions.GeneratorDiagnostics))
+        {
+            LogDiagnostics(logger, generatorDiagnostics, "Generator");
+        }
+
+        LogDiagnostics(logger, finalDiagnostics, "Final compilation analysis");
     }
 
     private static void LogDiagnostics(ILogger<CodeTest> logger, ImmutableArray<Diagnostic> diagnostics, string diagnosticsSource)
@@ -239,24 +277,43 @@ public readonly struct CodeTest
                     var diagnosticsStringBuilder = new StringBuilder(diagnostics.Length * 100);
                     foreach (Diagnostic diagnostic in currentDiagnostics)
                     {
-                        diagnosticsStringBuilder.AppendLine($"\t{diagnostic}");
+                        FileLinePositionSpan location = diagnostic.Location.GetLineSpan();
+                        string shortPath = GetShortPath(location.Path);
+                        diagnosticsStringBuilder.AppendLine($"\t{shortPath}: {location.Span.ToString()}:");
+                        diagnosticsStringBuilder.AppendLine($"\t\t{diagnostic.GetMessage()}");
                     }
 
-                    diagnosticsStringBuilder.Length--;
+                    bool endsInNewLine = diagnosticsStringBuilder[^1] == '\n';
+                    if (endsInNewLine)
+                    {
+                        if (diagnosticsStringBuilder[^2] == '\r')
+                        {
+                            diagnosticsStringBuilder.Length -= 2;
+                        }
+                        else
+                        {
+                            diagnosticsStringBuilder.Length -= 1;
+                        }
+                    }
+
+                    string severityName = severity.ToString();
+                    string diagnosticsString = diagnosticsStringBuilder.ToString();
 
                     logger.Log
                     (
                         logLevel,
-                        "{DiagnosticsSource} has {diagnosticsCount} '{DiagnosticSeverity}' diagnostics:\n{Diagnostics}",
+                        "{DiagnosticsSource} has {DiagnosticsCount} '{DiagnosticSeverity}' diagnostics:\n{Diagnostics}",
                         diagnosticsSource,
                         currentDiagnostics.Length,
-                        severity.ToString(),
-                        diagnosticsStringBuilder.ToString()
+                        severityName,
+                        diagnosticsString
                     );
                 }
             }
         }
     }
+
+    private static string GetShortPath(string path) => ShortGeneratedCodeFilePathRegex.Match(path).Groups[1].Captures[0].Value;
 
     public CodeTest WithCode(string code) => WithCode(new CodeTestCode(code));
 
