@@ -10,7 +10,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Misbat.CodeAnalysis.Test.Extensions;
-using Misbat.CodeAnalysis.Test.Utility;
 
 namespace Misbat.CodeAnalysis.Test.CodeTest;
 
@@ -181,6 +180,7 @@ public readonly struct CodeTest
                     }
                 }
             }
+            
         }
     }
 
@@ -203,80 +203,17 @@ public readonly struct CodeTest
     {
         if (loggingOptions.HasFlag(LoggingOptions.AnalyzerDiagnostics))
         {
-            LogDiagnostics(logger, analyzerDiagnostics, "Analyzer");
+            logger.LogDiagnostics(analyzerDiagnostics, "Analyzer");
         }
 
         if (loggingOptions.HasFlag(LoggingOptions.GeneratorDiagnostics))
         {
-            LogDiagnostics(logger, generatorDiagnostics, "Generator");
+            logger.LogDiagnostics(generatorDiagnostics, "Generator");
         }
 
-        LogDiagnostics(logger, finalDiagnostics, "Final compilation analysis");
-    }
-
-    private static void LogDiagnostics(ILogger<CodeTest> logger, ImmutableArray<Diagnostic> diagnostics, string diagnosticsSource)
-    {
-        foreach (DiagnosticSeverity severity in new[]
-                 {
-                     DiagnosticSeverity.Error, DiagnosticSeverity.Warning, DiagnosticSeverity.Info, DiagnosticSeverity.Hidden
-                 })
+        if (loggingOptions.HasFlag(LoggingOptions.FinalDiagnostics))
         {
-            LogLevel logLevel = severity switch
-            {
-                DiagnosticSeverity.Hidden => LogLevel.Trace,
-                DiagnosticSeverity.Info => LogLevel.Information,
-                DiagnosticSeverity.Warning => LogLevel.Warning,
-                DiagnosticSeverity.Error => LogLevel.Error,
-                _ => throw new ArgumentOutOfRangeException()
-            };
-            if (logger.IsEnabled(logLevel))
-            {
-                ImmutableArray<Diagnostic> currentDiagnostics = diagnostics.Where(d => d.Severity == severity).ToImmutableArray();
-
-                if (currentDiagnostics.Any())
-                {
-                    var diagnosticsStringBuilder = new StringBuilder(diagnostics.Length * 100);
-                    foreach (Diagnostic diagnostic in currentDiagnostics)
-                    {
-                        FileLinePositionSpan location = diagnostic.Location.GetLineSpan();
-
-                        diagnosticsStringBuilder.Append('\t');
-                        if (FormatUtility.TryGetShortFileName(location.Path, out string? fileName))
-                        {
-                            diagnosticsStringBuilder.Append($"\t{fileName}: ");
-                        }
-
-                        diagnosticsStringBuilder.AppendLine($"{location.Span.ToString()}:");
-                        diagnosticsStringBuilder.AppendLine($"\t\t{diagnostic.GetMessage()}");
-                    }
-
-                    bool endsInNewLine = diagnosticsStringBuilder[^1] == '\n';
-                    if (endsInNewLine)
-                    {
-                        if (diagnosticsStringBuilder[^2] == '\r')
-                        {
-                            diagnosticsStringBuilder.Length -= 2;
-                        }
-                        else
-                        {
-                            diagnosticsStringBuilder.Length -= 1;
-                        }
-                    }
-
-                    string severityName = severity.ToString();
-                    string diagnosticsString = diagnosticsStringBuilder.ToString();
-
-                    logger.Log
-                    (
-                        logLevel,
-                        "{DiagnosticsSource} has {DiagnosticsCount} '{DiagnosticSeverity}' diagnostics:\n{Diagnostics}",
-                        diagnosticsSource,
-                        currentDiagnostics.Length,
-                        severityName,
-                        diagnosticsString
-                    );
-                }
-            }
+            logger.LogDiagnostics(finalDiagnostics, "Final compilation analysis");
         }
     }
 

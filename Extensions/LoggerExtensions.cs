@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Collections.Immutable;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.Extensions.Logging;
 using Misbat.CodeAnalysis.Test.Utility;
@@ -28,6 +29,32 @@ public static class LoggerExtensions
             else
             {
                 logger.LogInformation("{Message}\n{Code}", message, code);
+            }
+        }
+    }
+
+    public static void LogDiagnostics(this ILogger logger, ImmutableArray<Diagnostic> diagnostics, string source)
+    {
+        foreach (DiagnosticSeverity severity in DiagnosticSeverityUtility.All)
+        {
+            LogLevel logLevel = severity.GetLogLevel();
+            
+            if (logger.IsEnabled(logLevel))
+            {
+                ImmutableArray<Diagnostic> currentDiagnostics = diagnostics.WithSeverity(severity);
+
+                if (currentDiagnostics.Any())
+                {
+                    logger.Log
+                    (
+                        logLevel,
+                        "{DiagnosticsSource} has {DiagnosticsCount} '{DiagnosticSeverity}' diagnostics:\n{Diagnostics}",
+                        source,
+                        currentDiagnostics.Length,
+                        severity.GetName(),
+                        currentDiagnostics.GetString()
+                    );
+                }
             }
         }
     }
