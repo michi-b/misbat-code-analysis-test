@@ -31,9 +31,9 @@ public readonly struct CodeTest
         AnalyzerDiagnostics = 1 << 2,
         GeneratorDiagnostics = 1 << 3,
         FinalDiagnostics = 1 << 4,
-        AllDiagnostics = AnalyzerDiagnostics | GeneratorDiagnostics | FinalDiagnostics,
-        AllCode = TestedCode | GeneratedCode,
-        All = AllCode | AllDiagnostics
+        Diagnostics = AnalyzerDiagnostics | GeneratorDiagnostics | FinalDiagnostics,
+        Code = TestedCode | GeneratedCode,
+        All = Code | Diagnostics
     }
 
     public CodeTest(CodeTestConfiguration configuration, ImmutableArray<string> namespaceImports = default, string? inNamespace = null)
