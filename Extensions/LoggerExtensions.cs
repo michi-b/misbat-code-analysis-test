@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.Extensions.Logging;
@@ -33,7 +34,19 @@ public static class LoggerExtensions
         }
     }
 
+    [PublicAPI]
+    public static void LogDiagnostics(this ILogger logger, ImmutableArray<Diagnostic> diagnostics)
+    {
+        LogDiagnosticsPrivate(logger, diagnostics, "There are");
+    }
+
     public static void LogDiagnostics(this ILogger logger, ImmutableArray<Diagnostic> diagnostics, string source)
+    {
+        LogDiagnosticsPrivate(logger, diagnostics, $"{source} has");
+    }
+   
+
+    private static void LogDiagnosticsPrivate(ILogger logger, ImmutableArray<Diagnostic> diagnostics, string messagePrefix)
     {
         foreach (DiagnosticSeverity severity in DiagnosticSeverityUtility.All)
         {
@@ -48,8 +61,8 @@ public static class LoggerExtensions
                     logger.Log
                     (
                         logLevel,
-                        "{DiagnosticsSource} has {DiagnosticsCount} '{DiagnosticSeverity}' diagnostics:\n{Diagnostics}",
-                        source,
+                        "{MessagePrefix} {DiagnosticsCount} '{DiagnosticSeverity}' diagnostics:\n{Diagnostics}",
+                        messagePrefix,
                         currentDiagnostics.Length,
                         severity.GetName(),
                         currentDiagnostics.GetString()
