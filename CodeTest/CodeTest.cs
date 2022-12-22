@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Text;
 using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
@@ -53,7 +54,11 @@ public readonly struct CodeTest
     }
 
     public async Task<CodeTest> Run
-        (CancellationToken cancellationToken, ILoggerFactory? loggerFactory = null, LoggingOptions loggingOptions = LoggingOptions.All)
+    (
+        CancellationToken cancellationToken,
+        ILoggerFactory? loggerFactory = null,
+        LoggingOptions loggingOptions = LoggingOptions.All
+    )
     {
         ILogger<CodeTest> logger = loggerFactory != null ? loggerFactory.CreateLogger<CodeTest>() : NullLogger<CodeTest>.Instance;
 
@@ -156,22 +161,18 @@ public readonly struct CodeTest
             foreach (KeyValuePair<Type, GeneratorDriver> generatorResult in generatorResults)
             {
                 ImmutableArray<SyntaxTree> generatedTrees = generatorResult.Value.GetRunResult().GeneratedTrees;
-                if (generatedTrees.Any())
+                int treesCount = generatedTrees.Length;
+                if (treesCount > 0)
                 {
-                    string[] treePaths = (from tree in generatedTrees select Path.GetFileName(tree.FilePath)).ToArray();
-                    int treeCount = treePaths.Length;
-                    var treePathsBuilder = new StringBuilder(treePaths.Length * treePaths[0].Length * 2);
-                    for (int i = 0; i < treeCount; i++)
-                    {
-                        treePathsBuilder.Append($"\n[{i}] {treePaths[i]}");
-                    }
+                    bool hasTreesString = generatedTrees.TryGetString(out string? treesString, 1);
+                    Debug.Assert(hasTreesString);
 
                     logger.LogInformation
                     (
-                        "Generator {GeneratorType} generated {GeneratedTreesCount} trees:{TreePaths}",
+                        "Generator {GeneratorType} generated {GeneratedTreesCount} trees:\n{TreePaths}",
                         generatorResult.Key.FullName,
-                        treeCount,
-                        treePathsBuilder.ToString()
+                        treesCount,
+                        treesString
                     );
 
                     foreach (SyntaxTree tree in generatedTrees)
@@ -244,6 +245,7 @@ public readonly struct CodeTest
                         {
                             diagnosticsStringBuilder.Append($"\t{fileName}: ");
                         }
+
                         diagnosticsStringBuilder.AppendLine($"{location.Span.ToString()}:");
                         diagnosticsStringBuilder.AppendLine($"\t\t{diagnostic.GetMessage()}");
                     }

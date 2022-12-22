@@ -1,4 +1,8 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Collections.Immutable;
+using System.Text;
+using System.Text.RegularExpressions;
+using Microsoft.CodeAnalysis;
+using Misbat.CodeAnalysis.Test.Extensions;
 
 namespace Misbat.CodeAnalysis.Test.Utility;
 
@@ -28,10 +32,8 @@ public static class FormatUtility
             shortFileName = match.Groups[1].Captures[0].Value;
             return true;
         }
-        else
-        {
-            shortFileName = default;
-            return false;
-        }
+
+        shortFileName = default;
+        return false;
     }
 }
