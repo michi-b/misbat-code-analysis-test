@@ -36,6 +36,7 @@ public static class AssemblyExtensions
             }
         }
 
-        throw new ArgumentException($"Assembly with name '{target.GetName()}' does not transitively reference any assembly that matches the predicate.");
+        throw new ArgumentException
+            ($"Assembly with name '{target.GetName()}' does not transitively reference any assembly that matches the predicate.");
     }
 }

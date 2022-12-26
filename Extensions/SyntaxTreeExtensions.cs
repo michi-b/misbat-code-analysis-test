@@ -31,7 +31,7 @@ public static class SyntaxTreeExtensions
         return false;
     }
 
-    private static string GetShortFilename(this SyntaxTree tree)
+    public static string GetShortFilename(this SyntaxTree tree)
         => FormatUtility.TryGetShortFileName(tree.FilePath, out string? shortFileName)
             ? shortFileName!
             : UnknownFileName;

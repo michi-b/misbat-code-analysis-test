@@ -44,14 +44,13 @@ public static class LoggerExtensions
     {
         LogDiagnosticsPrivate(logger, diagnostics, $"{source} has");
     }
-   
 
     private static void LogDiagnosticsPrivate(ILogger logger, ImmutableArray<Diagnostic> diagnostics, string messagePrefix)
     {
         foreach (DiagnosticSeverity severity in DiagnosticSeverityUtility.All)
         {
             LogLevel logLevel = severity.GetLogLevel();
-            
+
             if (logger.IsEnabled(logLevel))
             {
                 ImmutableArray<Diagnostic> currentDiagnostics = diagnostics.WithSeverity(severity);

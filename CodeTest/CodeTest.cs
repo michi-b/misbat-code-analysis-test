@@ -180,7 +180,6 @@ public readonly struct CodeTest
                     }
                 }
             }
-            
         }
     }
 

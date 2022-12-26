@@ -7,10 +7,10 @@ namespace Misbat.CodeAnalysis.Test.Extensions;
 
 public static class DiagnosticExtensions
 {
-    public static void Log(this Diagnostic target, int indentLevel = 0) 
+    public static void Log(this Diagnostic target, int indentLevel = 0)
         => Console.WriteLine($"{target.Id} ({target.Severity}): {target.GetMessage()}".Indent(indentLevel));
 
-    public static ImmutableArray<Diagnostic> WithSeverity(this ImmutableArray<Diagnostic> target, DiagnosticSeverity severity) 
+    public static ImmutableArray<Diagnostic> WithSeverity(this ImmutableArray<Diagnostic> target, DiagnosticSeverity severity)
         => target.Where(d => d.Severity == severity).ToImmutableArray();
 
     public static string GetString(this ImmutableArray<Diagnostic> target)
@@ -25,6 +25,7 @@ public static class DiagnosticExtensions
             {
                 diagnosticsStringBuilder.Append($"\t{fileName}: ");
             }
+
             diagnosticsStringBuilder.AppendLine($"{location.Span.ToString()}:");
             diagnosticsStringBuilder.AppendLine($"\t\t{diagnostic.GetMessage()}");
         }
