@@ -23,6 +23,8 @@ public readonly struct CodeTestConfiguration
 
     public ImmutableArray<MetadataReference> MetaDataReferences { get; init; } = ImmutableArray<MetadataReference>.Empty;
 
+    public ImmutableArray<Predicate<Diagnostic>> DiagnosticFilters { get; init; } = ImmutableArray<Predicate<Diagnostic>>.Empty;
+
     private CodeTestConfiguration(CodeTestConfiguration other)
     {
         MetaDataReferences = other.MetaDataReferences;
@@ -30,6 +32,7 @@ public readonly struct CodeTestConfiguration
         Generators = other.Generators;
         IncrementalGenerators = other.IncrementalGenerators;
         AssemblyName = other.AssemblyName;
+        DiagnosticFilters = other.DiagnosticFilters;
     }
 
     private ImmutableHashSet<Type> TestAndTrackDistinctGeneratorType(Type generatorType)
@@ -59,19 +62,22 @@ public readonly struct CodeTestConfiguration
         ImmutableArray<DiagnosticAnalyzer> analyzers = default,
         ImmutableArray<ISourceGenerator> generators = default,
         ImmutableArray<IIncrementalGenerator> incrementalGenerators = default,
+        ImmutableArray<Predicate<Diagnostic>> diagnosticFilters = default,
         string assemblyName = "CodeAnalysisVerification"
     )
     {
         analyzers = analyzers.IsDefault ? ImmutableArray<DiagnosticAnalyzer>.Empty : analyzers;
         generators = generators.IsDefault ? ImmutableArray<ISourceGenerator>.Empty : generators;
         incrementalGenerators = incrementalGenerators.IsDefault ? ImmutableArray<IIncrementalGenerator>.Empty : incrementalGenerators;
+        diagnosticFilters = diagnosticFilters.IsDefault ? ImmutableArray<Predicate<Diagnostic>>.Empty : diagnosticFilters;
 
         MetaDataReferences = MetaDataReferences.AddRange(metaDataReferences);
         Analyzers = analyzers;
         Generators = generators;
         IncrementalGenerators = incrementalGenerators;
         AssemblyName = assemblyName;
-        GeneratorTypes = TestAndTrackDistinctGeneratorTypes(generators.AsEnumerable<object>().Concat(incrementalGenerators));
+        DiagnosticFilters = diagnosticFilters;
+        GeneratorTypes = TestAndTrackDistinctGeneratorTypes(Generators.AsEnumerable<object>().Concat(incrementalGenerators));
     }
 
     public CodeTestConfiguration WithAdditionalMetadataReferences
@@ -97,4 +103,7 @@ public readonly struct CodeTestConfiguration
             GeneratorTypes = TestAndTrackDistinctGeneratorTypes(additionalIncrementalGenerators),
             IncrementalGenerators = IncrementalGenerators.AddRange(additionalIncrementalGenerators)
         };
+
+    public CodeTestConfiguration WithAdditionalDiagnosticFilters(params Predicate<Diagnostic>[] additionalDiagnosticFilters)
+        => new(this) { DiagnosticFilters = DiagnosticFilters.AddRange(additionalDiagnosticFilters) };
 }

@@ -59,6 +59,12 @@ public readonly struct CodeTest
         LoggingOptions loggingOptions = LoggingOptions.All
     )
     {
+        ImmutableArray<Predicate<Diagnostic>> configurationDiagnosticFilters = Configuration.DiagnosticFilters;
+        Func<Diagnostic, bool> diagnosticsFilter = diagnostic =>
+        {
+            return Enumerable.All(configurationDiagnosticFilters, filter => filter(diagnostic));
+        };
+
         ILogger<CodeTest> logger = loggerFactory != null ? loggerFactory.CreateLogger<CodeTest>() : NullLogger<CodeTest>.Instance;
 
         var syntaxTrees = new SyntaxTree[Code.Count];
@@ -88,14 +94,15 @@ public readonly struct CodeTest
         );
 
         ImmutableArray<Diagnostic> analyzerDiagnostics = Configuration.Analyzers.Length > 0
-            ? await compilation.WithAnalyzers(Configuration.Analyzers, cancellationToken: cancellationToken)
-                .GetAllDiagnosticsAsync(cancellationToken)
+            ? (await compilation.WithAnalyzers(Configuration.Analyzers, cancellationToken: cancellationToken)
+                .GetAllDiagnosticsAsync(cancellationToken)).Where(diagnosticsFilter)
+            .ToImmutableArray()
             : ImmutableArray<Diagnostic>.Empty;
 
         ImmutableDictionary<Type, GeneratorDriver> generatorResults = RunGenerators
-            (compilation, out compilation, out ImmutableArray<Diagnostic> generatorDiagnostics, cancellationToken);
+            (compilation, out compilation, out ImmutableArray<Diagnostic> generatorDiagnostics, diagnosticsFilter, cancellationToken);
 
-        ImmutableArray<Diagnostic> finalDiagnostics = compilation.GetDiagnostics();
+        ImmutableArray<Diagnostic> finalDiagnostics = compilation.GetDiagnostics().Where(diagnosticsFilter).ToImmutableArray();
 
         //log all diagnostics
         if (loggingOptions.HasFlag(LoggingOptions.FinalDiagnostics) && logger.IsEnabled(LogLevel.Information))
@@ -197,22 +204,23 @@ public readonly struct CodeTest
         ImmutableArray<Diagnostic> analyzerDiagnostics,
         ImmutableArray<Diagnostic> generatorDiagnostics,
         ImmutableArray<Diagnostic> finalDiagnostics,
-        LoggingOptions loggingOptions
+        LoggingOptions loggingOptions,
+        Func<Diagnostic, bool>? filter = null
     )
     {
         if (loggingOptions.HasFlag(LoggingOptions.AnalyzerDiagnostics))
         {
-            logger.LogDiagnostics(analyzerDiagnostics, "Analyzer");
+            logger.LogDiagnostics(analyzerDiagnostics, "Analyzer", filter);
         }
 
         if (loggingOptions.HasFlag(LoggingOptions.GeneratorDiagnostics))
         {
-            logger.LogDiagnostics(generatorDiagnostics, "Generator");
+            logger.LogDiagnostics(generatorDiagnostics, "Generator", filter);
         }
 
         if (loggingOptions.HasFlag(LoggingOptions.FinalDiagnostics))
         {
-            logger.LogDiagnostics(finalDiagnostics, "Final compilation analysis");
+            logger.LogDiagnostics(finalDiagnostics, "Final compilation analysis", filter);
         }
     }
 
@@ -246,6 +254,7 @@ public readonly struct CodeTest
         Compilation compilation,
         out Compilation updatedCompilation,
         out ImmutableArray<Diagnostic> reportedDiagnostics,
+        Func<Diagnostic, bool> diagnosticsFilter,
         CancellationToken cancellationToken
     )
     {
@@ -270,6 +279,8 @@ public readonly struct CodeTest
             results = results.Add(generator.GetType(), generatorDriver);
             reportedDiagnostics = reportedDiagnostics.AddRange(diagnostics);
         }
+
+        reportedDiagnostics = reportedDiagnostics.Where(diagnosticsFilter).ToImmutableArray();
 
         return results;
     }
