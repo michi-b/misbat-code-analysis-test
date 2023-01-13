@@ -39,8 +39,7 @@ public static class MetadataReferenceUtility
 
     public static MetadataReference FromAssembly(Assembly assembly) => MetadataReference.CreateFromFile(assembly.Location);
 
-    public static MetadataReference TransitivelyReferenced(Type searchStartType, string name)
-        => TransitivelyReferenced(searchStartType.Assembly, name);
+    public static MetadataReference TransitivelyReferenced(Type searchStartType, string name) => TransitivelyReferenced(searchStartType.Assembly, name);
 
     public static MetadataReference TransitivelyReferenced(Assembly assembly, string name) => FromAssembly(assembly.FindTransitivelyReferenced(name));
 }

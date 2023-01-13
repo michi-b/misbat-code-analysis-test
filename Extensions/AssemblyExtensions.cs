@@ -4,8 +4,7 @@ namespace Misbat.CodeAnalysis.Test.Extensions;
 
 public static class AssemblyExtensions
 {
-    public static Assembly FindTransitivelyReferenced(this Assembly target, string name)
-        => FindTransitivelyReferenced(target, a => a.GetName().Name == name);
+    public static Assembly FindTransitivelyReferenced(this Assembly target, string name) => FindTransitivelyReferenced(target, a => a.GetName().Name == name);
 
     private static Assembly FindTransitivelyReferenced(this Assembly target, Predicate<Assembly> predicate)
     {
@@ -36,7 +35,6 @@ public static class AssemblyExtensions
             }
         }
 
-        throw new ArgumentException
-            ($"Assembly with name '{target.GetName()}' does not transitively reference any assembly that matches the predicate.");
+        throw new ArgumentException($"Assembly with name '{target.GetName()}' does not transitively reference any assembly that matches the predicate.");
     }
 }

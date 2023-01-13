@@ -60,10 +60,7 @@ public readonly struct CodeTest
     )
     {
         ImmutableArray<Predicate<Diagnostic>> configurationDiagnosticFilters = Configuration.DiagnosticFilters;
-        Func<Diagnostic, bool> diagnosticsFilter = diagnostic =>
-        {
-            return Enumerable.All(configurationDiagnosticFilters, filter => filter(diagnostic));
-        };
+        Func<Diagnostic, bool> diagnosticsFilter = diagnostic => { return Enumerable.All(configurationDiagnosticFilters, filter => filter(diagnostic)); };
 
         ILogger<CodeTest> logger = loggerFactory != null ? loggerFactory.CreateLogger<CodeTest>() : NullLogger<CodeTest>.Instance;
 
@@ -232,9 +229,7 @@ public readonly struct CodeTest
 
     public CodeTest Configure(Func<CodeTestConfiguration, CodeTestConfiguration> configure) => WithConfiguration(configure(Configuration));
 
-    public CodeTest WithAddedNamespaceImports
-        (params string[] namespaceImports)
-        => new(this) { NamespaceImports = NamespaceImports.AddRange(namespaceImports) };
+    public CodeTest WithAddedNamespaceImports(params string[] namespaceImports) => new(this) { NamespaceImports = NamespaceImports.AddRange(namespaceImports) };
 
     public CodeTestResult Result
     {
