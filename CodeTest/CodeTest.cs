@@ -102,7 +102,7 @@ public readonly struct CodeTest
         ImmutableArray<Diagnostic> finalDiagnostics = compilation.GetDiagnostics().Where(diagnosticsFilter).ToImmutableArray();
 
         //log all diagnostics
-        if (loggingOptions.HasFlag(LoggingOptions.FinalDiagnostics) && logger.IsEnabled(LogLevel.Information))
+        if ((loggingOptions & LoggingOptions.Diagnostics) != 0 && logger.IsEnabled(LogLevel.Information))
         {
             LogDiagnostics(logger, analyzerDiagnostics, generatorDiagnostics, finalDiagnostics, loggingOptions);
         }

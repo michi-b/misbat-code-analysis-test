@@ -14,6 +14,8 @@ public readonly struct CodeTestResult
     public ImmutableArray<Diagnostic> FinalDiagnostics { get; init; }
     public Compilation Compilation { get; init; }
 
+    public GeneratorDriverRunResult GetGeneratorDriverRunResult<TGenerator>() => GeneratorResults[typeof(TGenerator)].GetRunResult();
+
     public void LogDiagnostics()
     {
         if (FinalDiagnostics.IsEmpty)
