@@ -22,7 +22,7 @@ public readonly struct CodeTest
     public ImmutableArray<CodeTestResult> Results { get; private init; } = ImmutableArray<CodeTestResult>.Empty;
     private CodeTestConfiguration Configuration { get; init; }
 
-    [PublicAPI]
+    [PublicAPI, Flags]
     public enum LoggingOptions
     {
         None = 0,
