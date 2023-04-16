@@ -84,6 +84,8 @@ public readonly struct CodeTestConfiguration
         (params MetadataReference[] additionalMetadataReferences)
         => new(this) { MetaDataReferences = MetaDataReferences.AddRange(additionalMetadataReferences) };
 
+    public CodeTestConfiguration WithMetadataReferences(ImmutableArray<MetadataReference> metadataReferences) => new(this) { MetaDataReferences = metadataReferences };
+
     public CodeTestConfiguration WithAdditionalAnalyzers
         (params DiagnosticAnalyzer[] additionalAnalyzers)
         => new(this) { Analyzers = Analyzers.AddRange(additionalAnalyzers) };
