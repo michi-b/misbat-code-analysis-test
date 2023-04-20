@@ -3,9 +3,8 @@ using System.Net;
 using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Misbat.CodeAnalysis.Test.CodeTest;
-using Misbat.CodeAnalysis.Test.Utility;
 
-namespace MsbRpc.Test.Generator;
+namespace Misbat.CodeAnalysis.Test.Utility;
 
 public static class CodeTestConfigurationUtility
 {

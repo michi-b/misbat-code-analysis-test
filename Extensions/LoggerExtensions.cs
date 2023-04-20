@@ -13,7 +13,6 @@ public static class LoggerExtensions
     (
         this ILogger logger,
         SyntaxTree tree,
-        string message,
         CancellationToken cancellationToken,
         LogLevel logLevel = LogLevel.Information
     )
@@ -25,11 +24,11 @@ public static class LoggerExtensions
 
             if (FormatUtility.TryGetShortFileName(tree.FilePath, out string? fileName))
             {
-                logger.LogInformation("{Message} ({FileName})\n{Code}", message, fileName, code);
+                logger.LogInformation("({FileName})\n{Code}", fileName, code);
             }
             else
             {
-                logger.LogInformation("{Message}\n{Code}", message, code);
+                logger.LogInformation("\n{Code}", code);
             }
         }
     }
