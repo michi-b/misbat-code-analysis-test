@@ -26,11 +26,7 @@ public abstract class SingleGenerationTest<TTest, TGenerator> : Test
     }
 
     [PublicAPI]
-    protected async Task<CodeTestResult> RunCodeTest
-    (
-        Func<CodeTest.CodeTest, CodeTest.CodeTest>? configureCodeTest = null,
-        LoggingOptions loggingOptions = LoggingOptions.None
-    )
+    protected async Task<CodeTestResult> RunCodeTest(LoggingOptions loggingOptions, Func<CodeTest.CodeTest, CodeTest.CodeTest>? configureCodeTest = null)
     {
         CodeTest.CodeTest codeTest = configureCodeTest?.Invoke(CodeTest) ?? CodeTest;
         return (await codeTest.Run(CancellationToken, LoggerFactory, loggingOptions)).Result;
@@ -57,26 +53,31 @@ public abstract class SingleGenerationTest<TTest, TGenerator> : Test
         }
     }
 
-    protected async Task TestGeneratorRuns()
+    [PublicAPI]
+    protected async Task<CodeTestResult> TestGeneratorRuns(LoggingOptions loggingOptions = LoggingOptions.All)
     {
-        CodeTestResult result = await RunCodeTest();
+        CodeTestResult result = await RunCodeTest(loggingOptions);
         Assert.IsTrue(result.GeneratorResults.ContainsKey(typeof(TGenerator)));
-    }
-
-    protected async Task TestGeneratesAnyTrees()
-        => Assert.That.HasGeneratedAnyTree((await RunCodeTest(loggingOptions: LoggingOptions.All)).GeneratorResults[typeof(TGenerator)].GetRunResult());
-
-    private static bool IsNotHidden(Diagnostic diagnostic) => diagnostic.Severity != DiagnosticSeverity.Hidden;
-
-    protected async Task TestFinalCompilationReportsNoDiagnostics()
-    {
-        await TestFinalCompilationReportsNoDiagnostics(IsNotHidden);
+        return result;
     }
 
     [PublicAPI]
-    protected async Task TestFinalCompilationReportsNoDiagnostics(Predicate<Diagnostic>? filter)
+    protected async Task<CodeTestResult> TestGeneratesAnyTrees(LoggingOptions loggingOptions = LoggingOptions.All)
     {
-        CodeTestResult result = await RunCodeTest(loggingOptions: LoggingOptions.FinalDiagnostics);
+        CodeTestResult result = await RunCodeTest(loggingOptions);
+        Assert.That.HasGeneratedAnyTree(result.GeneratorResults[typeof(TGenerator)].GetRunResult());
+        return result;
+    }
+
+    private static bool IsNotHidden(Diagnostic diagnostic) => diagnostic.Severity != DiagnosticSeverity.Hidden;
+
+    [PublicAPI]
+    protected async Task<CodeTestResult> TestFinalCompilationReportsNoDiagnostics() => await TestFinalCompilationReportsNoDiagnostics(IsNotHidden);
+
+    [PublicAPI]
+    protected async Task<CodeTestResult> TestFinalCompilationReportsNoDiagnostics(Predicate<Diagnostic>? filter)
+    {
+        CodeTestResult result = await RunCodeTest(LoggingOptions.FinalDiagnostics);
 
         ImmutableArray<Diagnostic> diagnostics = result.Compilation.GetDiagnostics();
         Diagnostic[] filteredDiagnostics = (filter != null ? diagnostics.Where(diagnostic => filter(diagnostic)) : diagnostics).ToArray();
@@ -84,9 +85,12 @@ public abstract class SingleGenerationTest<TTest, TGenerator> : Test
         await LogDiagnosticSourceTrees(result, filteredDiagnostics);
 
         Assert.AreEqual(0, filteredDiagnostics.Length);
+
+        return result;
     }
 
-    protected async Task TestGeneratesFile(string shortFileName)
+    [PublicAPI]
+    protected async Task<CodeTestResult> TestGeneratesFile(string shortFileName)
     {
         bool IsTargetDiagnostic(Diagnostic diagnostic) => diagnostic.Location.SourceTree == null || diagnostic.Location.SourceTree.GetShortFilename() == shortFileName;
 
@@ -97,30 +101,53 @@ public abstract class SingleGenerationTest<TTest, TGenerator> : Test
             return codeTest.Configure(testConfiguration => testConfiguration.WithAdditionalDiagnosticFilters(diagnosticFilter));
         }
 
-        GeneratorDriverRunResult result = GetGeneratorDriverRunResult(await RunCodeTest(ConfigureCodeTest, LoggingOptions.Diagnostics));
+        CodeTestResult result = await RunCodeTest(LoggingOptions.Diagnostics, ConfigureCodeTest);
+        GeneratorDriverRunResult generatorDriverRunResult = GetGeneratorDriverRunResult(result);
 
-        SyntaxTree? tree = result.GeneratedTrees.FirstOrDefault(tree => tree.GetShortFilename() == shortFileName);
+        SyntaxTree? tree = generatorDriverRunResult.GeneratedTrees.FirstOrDefault(tree => tree.GetShortFilename() == shortFileName);
         Assert.IsNotNull(tree);
         await Logger.LogTreeAsync(tree, CancellationToken);
         Logger.LogInformation("Full file path is '{TreeFilePath}'", tree.FilePath);
+
+        return result;
     }
 
-    protected async Task TestGeneratorHasOneResult() => Assert.AreEqual(1, (await RunCodeTest(loggingOptions: LoggingOptions.All)).GeneratorResults.Count);
-    protected async Task TestGeneratorThrowsNoException() => Assert.AreEqual(null, GetGeneratorRunResult(await RunCodeTest()).Exception);
-
-    protected async Task TestGeneratorReportsNoDiagnostics()
+    [PublicAPI]
+    protected async Task<CodeTestResult> TestGeneratorHasResult(LoggingOptions loggingOptions = LoggingOptions.All)
     {
-        ImmutableArray<Diagnostic> diagnostics = GetGeneratorRunResult(await RunCodeTest(loggingOptions: LoggingOptions.GeneratorDiagnostics)).Diagnostics;
+        CodeTestResult result = await RunCodeTest(loggingOptions);
+        Assert.AreEqual(1, result.GeneratorResults.Count);
+        return result;
+    }
+
+    [PublicAPI]
+    protected async Task<CodeTestResult> TestGeneratorThrowsNoException(LoggingOptions loggingOptions = LoggingOptions.None)
+    {
+        CodeTestResult result = await RunCodeTest(loggingOptions);
+        Assert.AreEqual(null, GetGeneratorRunResult(result).Exception);
+        return result;
+    }
+
+    [PublicAPI]
+    protected async Task<CodeTestResult> TestGeneratorReportsNoDiagnostics()
+    {
+        CodeTestResult result = await RunCodeTest(LoggingOptions.GeneratorDiagnostics);
+        ImmutableArray<Diagnostic> diagnostics = GetGeneratorRunResult(result).Diagnostics;
         Assert.AreEqual(0, diagnostics.Length);
+        return result;
     }
 
-    protected async Task TestGeneratorReportsDiagnostics(params string[] diagnosticIds)
+    [PublicAPI]
+    protected async Task<CodeTestResult> TestGeneratorReportsDiagnostics(params string[] diagnosticIds)
     {
-        ImmutableArray<Diagnostic> diagnostics = GetGeneratorRunResult(await RunCodeTest(loggingOptions: LoggingOptions.GeneratorDiagnostics)).Diagnostics;
+        CodeTestResult result = await RunCodeTest(LoggingOptions.GeneratorDiagnostics);
+        ImmutableArray<Diagnostic> diagnostics = GetGeneratorRunResult(result).Diagnostics;
         foreach (string diagnosticId in diagnosticIds)
         {
             Assert.IsTrue(diagnostics.Any(d => d.Id == diagnosticId), $"Expected diagnostic with ID '{diagnosticId}' was not reported");
         }
+
+        return result;
     }
 
     [PublicAPI]
