@@ -12,14 +12,11 @@ namespace Misbat.CodeAnalysis.Test.TestBases;
 public abstract class SingleGenerationTest<TTest, TGenerator> : Test
     where TGenerator : IIncrementalGenerator, new()
 {
-    [PublicAPI]
-    protected readonly CodeTest.CodeTest CodeTest;
+    [PublicAPI] protected readonly CodeTest.CodeTest CodeTest;
 
-    [PublicAPI]
-    protected readonly ILogger<TTest> Logger;
+    [PublicAPI] protected readonly ILogger<TTest> Logger;
 
-    [PublicAPI]
-    protected readonly ILoggerFactory LoggerFactory;
+    [PublicAPI] protected readonly ILoggerFactory LoggerFactory;
 
     protected SingleGenerationTest(string code, string nameSpace, ILoggerFactory loggerFactory, params Type[] referencedTypes)
     {
@@ -103,7 +100,7 @@ public abstract class SingleGenerationTest<TTest, TGenerator> : Test
         foreach (string diagnosticId in diagnosticIds)
         {
             Assert.IsTrue(diagnostics.Any(d => d.Id == diagnosticId), $"Expected diagnostic with ID '{diagnosticId}' was not reported");
-        }        
+        }
     }
 
     [PublicAPI]

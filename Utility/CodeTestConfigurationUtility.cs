@@ -22,10 +22,7 @@ public static class CodeTestConfigurationUtility
             MetadataReferenceUtility.TransitivelyReferenced(typeof(TTest), "System.Threading.Thread")
         );
         metaDataReferences = metaDataReferences.AddRange(referencedTypes.Select(MetadataReferenceUtility.FromType));
-        
-        return new CodeTestConfiguration
-        (
-            metaDataReferences
-        ).WithAdditionalGenerators(new TGenerator());
+
+        return new CodeTestConfiguration(metaDataReferences).WithAdditionalGenerators(new TGenerator());
     }
 }
