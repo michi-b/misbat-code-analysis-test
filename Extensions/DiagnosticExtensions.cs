@@ -25,8 +25,7 @@ public static class DiagnosticExtensions
             {
                 diagnosticsStringBuilder.Append($"\t{fileName}: ");
             }
-
-            diagnosticsStringBuilder.AppendLine($"{location.Span.ToString()}:");
+            diagnosticsStringBuilder.AppendLine($"{location.Span.ToString()}: {diagnostic.Id}");
             diagnosticsStringBuilder.AppendLine($"\t\t{diagnostic.GetMessage()}");
         }
 

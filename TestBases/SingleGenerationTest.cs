@@ -97,6 +97,15 @@ public abstract class SingleGenerationTest<TTest, TGenerator> : Test
         Assert.AreEqual(0, diagnostics.Length);
     }
 
+    protected async Task TestGeneratorReportsDiagnostics(params string[] diagnosticIds)
+    {
+        ImmutableArray<Diagnostic> diagnostics = GetGeneratorRunResult(await RunCodeTest(LoggingOptions.GeneratorDiagnostics)).Diagnostics;
+        foreach (string diagnosticId in diagnosticIds)
+        {
+            Assert.IsTrue(diagnostics.Any(d => d.Id == diagnosticId), $"Expected diagnostic with ID '{diagnosticId}' was not reported");
+        }        
+    }
+
     [PublicAPI]
     protected static GeneratorRunResult GetGeneratorRunResult(CodeTestResult result) => GetGeneratorRunResult(GetGeneratorDriverRunResult(result));
 
