@@ -39,12 +39,9 @@ public static class LoggerExtensions
         LogDiagnosticsPrivate(logger, diagnostics, "There are");
     }
 
-    public static void LogDiagnostics(this ILogger logger, ImmutableArray<Diagnostic> diagnostics, string source, Func<Diagnostic, bool>? predicate)
+    public static void LogDiagnostics(this ILogger logger, ImmutableArray<Diagnostic> diagnostics, string source)
     {
-        ImmutableArray<Diagnostic> filteredDiagnostics = predicate != null
-            ? diagnostics.Where(predicate).ToImmutableArray()
-            : diagnostics;
-        LogDiagnosticsPrivate(logger, filteredDiagnostics, $"{source} has");
+        LogDiagnosticsPrivate(logger, diagnostics, $"{source} has");
     }
 
     private static void LogDiagnosticsPrivate(ILogger logger, ImmutableArray<Diagnostic> diagnostics, string messagePrefix)

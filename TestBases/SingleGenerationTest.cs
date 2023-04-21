@@ -18,9 +18,9 @@ public abstract class SingleGenerationTest<TTest, TGenerator> : Test
 
     [PublicAPI] protected readonly ILoggerFactory LoggerFactory;
 
-    protected SingleGenerationTest(string code, string nameSpace, ILoggerFactory loggerFactory, params Type[] referencedTypes)
+    protected SingleGenerationTest(string code, string nameSpace, ILoggerFactory loggerFactory, Predicate<Diagnostic>? diagnosticFilter, params Type[] referencedTypes)
     {
-        CodeTest = CodeTestUtility.GetSingleGeneratorCodeTest<TTest, TGenerator>(code, nameSpace, referencedTypes);
+        CodeTest = CodeTestUtility.GetSingleGeneratorCodeTest<TTest, TGenerator>(code, nameSpace, diagnosticFilter, referencedTypes);
         LoggerFactory = loggerFactory;
         Logger = loggerFactory.CreateLogger<TTest>();
     }
@@ -28,13 +28,16 @@ public abstract class SingleGenerationTest<TTest, TGenerator> : Test
     [PublicAPI]
     protected async Task<CodeTestResult> RunCodeTest
     (
-        LoggingOptions loggingOptions = LoggingOptions.None,
-        Predicate<Diagnostic>? diagnosticFilter = null
+        Func<CodeTest.CodeTest, CodeTest.CodeTest>? configureCodeTest = null,
+        LoggingOptions loggingOptions = LoggingOptions.None
     )
-        => (await CodeTest.Run(CancellationToken, LoggerFactory, loggingOptions)).Result;
+    {
+        CodeTest.CodeTest codeTest = configureCodeTest?.Invoke(CodeTest) ?? CodeTest;
+        return (await codeTest.Run(CancellationToken, LoggerFactory, loggingOptions)).Result;
+    }
 
     [PublicAPI]
-    protected async Task LogDiagnosticSourceTrees(CodeTestResult result, ImmutableArray<Diagnostic> diagnostics)
+    protected async Task LogDiagnosticSourceTrees(CodeTestResult result, IEnumerable<Diagnostic> diagnostics)
     {
         IEnumerable<string> diagnosticTargetFilePaths = from diagnostic in diagnostics
             where diagnostic.Location.SourceTree != null
@@ -61,16 +64,26 @@ public abstract class SingleGenerationTest<TTest, TGenerator> : Test
     }
 
     protected async Task TestGeneratesAnyTrees()
-        => Assert.That.HasGeneratedAnyTree((await RunCodeTest(LoggingOptions.All)).GeneratorResults[typeof(TGenerator)].GetRunResult());
+        => Assert.That.HasGeneratedAnyTree((await RunCodeTest(loggingOptions: LoggingOptions.All)).GeneratorResults[typeof(TGenerator)].GetRunResult());
+
+    private static bool IsNotHidden(Diagnostic diagnostic) => diagnostic.Severity != DiagnosticSeverity.Hidden;
 
     protected async Task TestFinalCompilationReportsNoDiagnostics()
     {
-        CodeTestResult result = await RunCodeTest(LoggingOptions.FinalDiagnostics);
+        await TestFinalCompilationReportsNoDiagnostics(IsNotHidden);
+    }
+
+    [PublicAPI]
+    protected async Task TestFinalCompilationReportsNoDiagnostics(Predicate<Diagnostic>? filter)
+    {
+        CodeTestResult result = await RunCodeTest(loggingOptions: LoggingOptions.FinalDiagnostics);
+
         ImmutableArray<Diagnostic> diagnostics = result.Compilation.GetDiagnostics();
+        Diagnostic[] filteredDiagnostics = (filter != null ? diagnostics.Where(diagnostic => filter(diagnostic)) : diagnostics).ToArray();
 
-        await LogDiagnosticSourceTrees(result, diagnostics);
+        await LogDiagnosticSourceTrees(result, filteredDiagnostics);
 
-        Assert.AreEqual(0, diagnostics.Length);
+        Assert.AreEqual(0, filteredDiagnostics.Length);
     }
 
     protected async Task TestGeneratesFile(string shortFileName)
@@ -78,25 +91,32 @@ public abstract class SingleGenerationTest<TTest, TGenerator> : Test
         bool IsTargetDiagnostic(Diagnostic diagnostic) => diagnostic.Location.SourceTree == null || diagnostic.Location.SourceTree.GetShortFilename() == shortFileName;
 
         Predicate<Diagnostic> diagnosticFilter = IsTargetDiagnostic;
-        GeneratorDriverRunResult result = GetGeneratorDriverRunResult(await RunCodeTest(LoggingOptions.Diagnostics, diagnosticFilter));
+
+        CodeTest.CodeTest ConfigureCodeTest(CodeTest.CodeTest codeTest)
+        {
+            return codeTest.Configure(testConfiguration => testConfiguration.WithAdditionalDiagnosticFilters(diagnosticFilter));
+        }
+
+        GeneratorDriverRunResult result = GetGeneratorDriverRunResult(await RunCodeTest(ConfigureCodeTest, LoggingOptions.Diagnostics));
+
         SyntaxTree? tree = result.GeneratedTrees.FirstOrDefault(tree => tree.GetShortFilename() == shortFileName);
         Assert.IsNotNull(tree);
         await Logger.LogTreeAsync(tree, CancellationToken);
         Logger.LogInformation("Full file path is '{TreeFilePath}'", tree.FilePath);
     }
 
-    protected async Task TestGeneratorHasOneResult() => Assert.AreEqual(1, (await RunCodeTest(LoggingOptions.All)).GeneratorResults.Count);
+    protected async Task TestGeneratorHasOneResult() => Assert.AreEqual(1, (await RunCodeTest(loggingOptions: LoggingOptions.All)).GeneratorResults.Count);
     protected async Task TestGeneratorThrowsNoException() => Assert.AreEqual(null, GetGeneratorRunResult(await RunCodeTest()).Exception);
 
     protected async Task TestGeneratorReportsNoDiagnostics()
     {
-        ImmutableArray<Diagnostic> diagnostics = GetGeneratorRunResult(await RunCodeTest(LoggingOptions.GeneratorDiagnostics)).Diagnostics;
+        ImmutableArray<Diagnostic> diagnostics = GetGeneratorRunResult(await RunCodeTest(loggingOptions: LoggingOptions.GeneratorDiagnostics)).Diagnostics;
         Assert.AreEqual(0, diagnostics.Length);
     }
 
     protected async Task TestGeneratorReportsDiagnostics(params string[] diagnosticIds)
     {
-        ImmutableArray<Diagnostic> diagnostics = GetGeneratorRunResult(await RunCodeTest(LoggingOptions.GeneratorDiagnostics)).Diagnostics;
+        ImmutableArray<Diagnostic> diagnostics = GetGeneratorRunResult(await RunCodeTest(loggingOptions: LoggingOptions.GeneratorDiagnostics)).Diagnostics;
         foreach (string diagnosticId in diagnosticIds)
         {
             Assert.IsTrue(diagnostics.Any(d => d.Id == diagnosticId), $"Expected diagnostic with ID '{diagnosticId}' was not reported");

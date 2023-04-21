@@ -191,23 +191,22 @@ public readonly struct CodeTest
         ImmutableArray<Diagnostic> analyzerDiagnostics,
         ImmutableArray<Diagnostic> generatorDiagnostics,
         ImmutableArray<Diagnostic> finalDiagnostics,
-        LoggingOptions loggingOptions,
-        Func<Diagnostic, bool>? filter = null
+        LoggingOptions loggingOptions
     )
     {
         if (loggingOptions.HasFlag(LoggingOptions.AnalyzerDiagnostics))
         {
-            logger.LogDiagnostics(analyzerDiagnostics, "Analyzer", filter);
+            logger.LogDiagnostics(analyzerDiagnostics, "Analyzer");
         }
 
         if (loggingOptions.HasFlag(LoggingOptions.GeneratorDiagnostics))
         {
-            logger.LogDiagnostics(generatorDiagnostics, "Generator", filter);
+            logger.LogDiagnostics(generatorDiagnostics, "Generator");
         }
 
         if (loggingOptions.HasFlag(LoggingOptions.FinalDiagnostics))
         {
-            logger.LogDiagnostics(finalDiagnostics, "Final compilation analysis", filter);
+            logger.LogDiagnostics(finalDiagnostics, "Final compilation analysis");
         }
     }
 
