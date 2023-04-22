@@ -19,6 +19,7 @@ public static class CodeTestUtility
         {
             configuration = configuration.WithAdditionalDiagnosticFilters(diagnosticFilter);
         }
+
         return new CodeTest.CodeTest(configuration)
             .WithAddedNamespaceImports("MsbRpc.Generator.Attributes", "MsbRpc.Contracts")
             .InNamespace(nameSpace)
