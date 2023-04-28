@@ -20,7 +20,13 @@ public abstract class SingleGenerationTest<TTest, TGenerator> : Test
 
     [PublicAPI] protected readonly ILoggerFactory LoggerFactory;
 
-    protected SingleGenerationTest(ILoggerFactory loggerFactory, Predicate<Diagnostic>? diagnosticFilter = null, Func<CodeTest.CodeTest, CodeTest.CodeTest>? configure = null, params Type[] referencedTypes)
+    protected SingleGenerationTest
+    (
+        ILoggerFactory loggerFactory,
+        Predicate<Diagnostic>? diagnosticFilter = null,
+        Func<CodeTest.CodeTest, CodeTest.CodeTest>? configure = null,
+        params Type[] referencedTypes
+    )
     {
         CodeTest = CodeTestUtility.GetSingleGeneratorCodeTest<TTest, TGenerator>(diagnosticFilter, referencedTypes);
         CodeTest = configure?.Invoke(CodeTest) ?? CodeTest;
