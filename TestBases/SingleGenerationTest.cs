@@ -38,8 +38,8 @@ public abstract class SingleGenerationTest<TTest, TGenerator> : Test
     protected async Task LogDiagnosticSourceTrees(CodeTestResult result, IEnumerable<Diagnostic> diagnostics)
     {
         IEnumerable<string> diagnosticTargetFilePaths = from diagnostic in diagnostics
-            where diagnostic.Location.SourceTree != null
-            select diagnostic.Location.SourceTree.FilePath;
+            where diagnostic.Location!.SourceTree != null
+            select diagnostic.Location!.SourceTree!.FilePath!;
         foreach (string filePath in diagnosticTargetFilePaths.Distinct())
         {
             // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
@@ -136,7 +136,7 @@ public abstract class SingleGenerationTest<TTest, TGenerator> : Test
 
             Logger.LogInformation("Generated trees:\n{Trees}", stringBuilder.ToString());
         }
-        
+
         return result;
     }
 
