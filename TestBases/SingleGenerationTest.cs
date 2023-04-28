@@ -1,6 +1,8 @@
 ﻿using System.Collections.Immutable;
+using System.Text;
 using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Misbat.CodeAnalysis.Test.CodeTest;
@@ -113,10 +115,28 @@ public abstract class SingleGenerationTest<TTest, TGenerator> : Test
     }
 
     [PublicAPI]
-    protected async Task<CodeTestResult> TestGeneratorHasResult(LoggingOptions loggingOptions = LoggingOptions.All)
+    protected async Task<CodeTestResult> TestGeneratorHasResult(bool logGeneratedTrees = true, LoggingOptions loggingOptions = LoggingOptions.None)
     {
         CodeTestResult result = await RunCodeTest(loggingOptions);
         Assert.AreEqual(1, result.GeneratorResults.Count);
+
+        if (logGeneratedTrees)
+        {
+            var stringBuilder = new StringBuilder(10000);
+
+            // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
+            // LINQ would be less readable here
+            foreach (SyntaxTree tree in result.GetGeneratorDriverRunResult<TGenerator>().GeneratedTrees)
+            {
+                foreach (TextLine line in (await tree.GetTextAsync()).Lines)
+                {
+                    stringBuilder.AppendLine(line.ToString());
+                }
+            }
+
+            Logger.LogInformation("Generated trees:\n{Trees}", stringBuilder.ToString());
+        }
+        
         return result;
     }
 
