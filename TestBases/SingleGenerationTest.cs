@@ -12,6 +12,7 @@ using Misbat.CodeAnalysis.Test.Utility;
 namespace Misbat.CodeAnalysis.Test.TestBases;
 
 public abstract class SingleGenerationTest<TTest, TGenerator> : Test
+    where TTest : new()
     where TGenerator : IIncrementalGenerator, new()
 {
     [PublicAPI] protected readonly CodeTest.CodeTest CodeTest;
