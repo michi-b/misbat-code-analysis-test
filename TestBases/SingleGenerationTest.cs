@@ -114,7 +114,8 @@ public abstract class SingleGenerationTest<TTest, TGenerator> : Test
         CodeTestResult result = await RunCodeTest(LoggingOptions.Diagnostics, ConfigureCodeTest);
         GeneratorDriverRunResult generatorDriverRunResult = GetGeneratorDriverRunResult(result);
 
-        SyntaxTree? tree = generatorDriverRunResult.GeneratedTrees.FirstOrDefault(tree => tree.GetShortFilename() == shortFileName);
+        ImmutableArray<SyntaxTree> generatedTrees = generatorDriverRunResult.GeneratedTrees;
+        SyntaxTree? tree = generatedTrees.FirstOrDefault(tree => tree.GetShortFilename() == shortFileName);
         Assert.IsNotNull(tree);
         await Logger.LogTreeAsync(tree, CancellationToken);
         Logger.LogInformation("Full file path is '{TreeFilePath}'", tree.FilePath);
