@@ -116,7 +116,7 @@ public abstract class SingleGenerationTest<TTest, TGenerator> : Test
 
         ImmutableArray<SyntaxTree> generatedTrees = generatorDriverRunResult.GeneratedTrees;
         SyntaxTree? tree = generatedTrees.FirstOrDefault(tree => tree.GetShortFilename() == shortFileName);
-        Assert.IsNotNull(tree);
+        Assert.IsNotNull(tree, $"expected file '{shortFileName}' was not generated");
         await Logger.LogTreeAsync(tree, CancellationToken);
         Logger.LogInformation("Full file path is '{TreeFilePath}'", tree.FilePath);
 
