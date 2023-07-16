@@ -1,5 +1,9 @@
-﻿using Microsoft.CodeAnalysis;
+﻿#region
+
+using Microsoft.CodeAnalysis;
 using Misbat.CodeAnalysis.Test.CodeTest;
+
+#endregion
 
 namespace Misbat.CodeAnalysis.Test.Utility;
 

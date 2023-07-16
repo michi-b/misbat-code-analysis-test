@@ -1,5 +1,9 @@
-﻿using System.Collections.Immutable;
+﻿#region
+
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+
+#endregion
 
 namespace Misbat.CodeAnalysis.Test.Utility;
 

@@ -1,4 +1,8 @@
-﻿using Misbat.CodeAnalysis.Test.Utility;
+﻿#region
+
+using Misbat.CodeAnalysis.Test.Utility;
+
+#endregion
 
 namespace Misbat.CodeAnalysis.Test.Extensions;
 

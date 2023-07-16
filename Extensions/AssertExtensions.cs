@@ -1,7 +1,11 @@
-﻿using System.Collections.Immutable;
+﻿#region
+
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+#endregion
 
 namespace Misbat.CodeAnalysis.Test.Extensions;
 

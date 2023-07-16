@@ -1,7 +1,11 @@
-﻿using System.Reflection;
+﻿#region
+
+using System.Reflection;
 using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
 using Misbat.CodeAnalysis.Test.Extensions;
+
+#endregion
 
 namespace Misbat.CodeAnalysis.Test.Utility;
 

@@ -1,8 +1,12 @@
-﻿using System.Collections.Immutable;
+﻿#region
+
+using System.Collections.Immutable;
 using System.Net;
 using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Misbat.CodeAnalysis.Test.CodeTest;
+
+#endregion
 
 namespace Misbat.CodeAnalysis.Test.Utility;
 

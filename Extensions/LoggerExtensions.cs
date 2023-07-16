@@ -1,9 +1,13 @@
-﻿using System.Collections.Immutable;
+﻿#region
+
+using System.Collections.Immutable;
 using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.Extensions.Logging;
 using Misbat.CodeAnalysis.Test.Utility;
+
+#endregion
 
 namespace Misbat.CodeAnalysis.Test.Extensions;
 

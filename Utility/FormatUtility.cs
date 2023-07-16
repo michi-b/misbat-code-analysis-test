@@ -1,4 +1,8 @@
-﻿using System.Text.RegularExpressions;
+﻿#region
+
+using System.Text.RegularExpressions;
+
+#endregion
 
 namespace Misbat.CodeAnalysis.Test.Utility;
 

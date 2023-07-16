@@ -1,4 +1,6 @@
-﻿using System.Collections.Immutable;
+﻿#region
+
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Text;
 using JetBrains.Annotations;
@@ -10,6 +12,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Misbat.CodeAnalysis.Test.Extensions;
+
+#endregion
 
 namespace Misbat.CodeAnalysis.Test.CodeTest;
 

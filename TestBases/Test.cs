@@ -1,5 +1,9 @@
-﻿using JetBrains.Annotations;
+﻿#region
+
+using JetBrains.Annotations;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+#endregion
 
 namespace Misbat.CodeAnalysis.Test.TestBases;
 

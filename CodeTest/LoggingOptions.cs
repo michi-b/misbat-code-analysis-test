@@ -1,4 +1,8 @@
-﻿using JetBrains.Annotations;
+﻿#region
+
+using JetBrains.Annotations;
+
+#endregion
 
 namespace Misbat.CodeAnalysis.Test.CodeTest;
 
